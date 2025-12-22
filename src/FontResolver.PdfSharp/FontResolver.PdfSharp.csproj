@@ -1,0 +1,47 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>14</LangVersion>
+    <PackageOutputPath>$(OutputPath)</PackageOutputPath>
+    <RootNamespace>FontResolver.PdfSharp</RootNamespace>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageId>FontResolver.PdfSharp</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>Lukas Dürrenberger</Authors>
+    <Company>Lukas Dürrenberger</Company>
+    <Description>Font Resolver for PDFSharp provides a cross-platform font resolver to be used with PDFSharp to resolve font paths based on their font names</Description>
+    <PackageTags>fonts;pdfsharp;fontresolver;cross-platform</PackageTags>
+    <RepositoryUrl>https://github.com/eXpl0it3r/FontResolver</RepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Tuffy.ttf" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Tuffy.ttf" />
+    <EmbeddedResource Include="Tuffy Bold.ttf" />
+    <EmbeddedResource Include="Tuffy Bold Italic.ttf" />
+    <EmbeddedResource Include="Tuffy Italic.ttf" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="" />
+    <None Include="../../LICENSE" Pack="true" PackagePath="" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
+    <PackageReference Include="PDFsharp" Version="6.2.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FontResolver\FontResolver.csproj" />
+  </ItemGroup>
+
+</Project>

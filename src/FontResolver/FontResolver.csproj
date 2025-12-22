@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>14</LangVersion>
+    <PackageOutputPath>$(OutputPath)</PackageOutputPath>
+    <RootNamespace>FontResolver</RootNamespace>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageId>FontResolver</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>Lukas Dürrenberger</Authors>
+    <Company>Lukas Dürrenberger</Company>
+    <Description>Font Resolver is a cross-platform library to resolve font paths based on their font names</Description>
+    <PackageTags>fonts;fontresolver;cross-platform</PackageTags>
+    <RepositoryUrl>https://github.com/eXpl0it3r/FontResolver</RepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="" />
+    <None Include="../../LICENSE" Pack="true" PackagePath="" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
+  </ItemGroup>
+
+</Project>
