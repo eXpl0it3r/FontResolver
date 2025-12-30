@@ -15,6 +15,8 @@ However, since resolving font files cross-platform can be useful in general, two
 - Remain .NET Standard 2.0 compatible
 - Turn contributors into maintainers
 
+**Note:** TrueType Collections (`*.ttc`) are not supported at the moment, as PDFsharp can't load them.
+
 ## Install
 
 Add the NuGet package to your project:
@@ -82,6 +84,14 @@ FontResolver.RegisterFontDirectory("path/to/custom/directory/with/fonts");
 
 // Or for PDFsharp
 FontResolverPdfSharp.RegisterFontDirectory("path/to/custom/directory/with/fonts");
+```
+
+### Discover Font Families
+
+Discover all the font families available on the system:
+
+```csharp
+var fontFamilies = FontResolver.DiscoverFontFamilies();
 ```
 
 ## License

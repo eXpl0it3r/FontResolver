@@ -50,5 +50,35 @@ namespace FontResolver.Tests
             Assert.IsNotNull(fontPath, "Font path should not be null for a font");
             Assert.IsTrue(File.Exists(fontPath), $"Font file should exist at path: {fontPath}");
         }
+
+        [TestMethod]
+        public void DiscoverFontFamilies_FontsExists_KnownFontsAreReturned()
+        {
+            // Arrange
+            var knownFonts = RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
+                ? new[] { "DejaVuSans" }
+                : new[] { "Arial", "Times New Roman", "Courier New" };
+
+            // Act
+            var discoveredFonts = FontResolver.DiscoverFontFamilies();
+
+            // Assert
+            foreach (var knownFont in knownFonts)
+            {
+                Assert.Contains(knownFont, discoveredFonts, $"Discovered fonts should contain known font: {knownFont}");
+            }
+        }
+
+        [TestMethod]
+        public void DiscoverFontFamilies_ResolveFont_FontIsResolved()
+        {
+            // Arrange & Act
+            var discoveredFonts = FontResolver.DiscoverFontFamilies();
+            var resolvedFont = FontResolver.Resolve(discoveredFonts.First(), new FontStyle());
+
+            // Assert
+            Assert.IsNotEmpty(discoveredFonts, "System should have fonts.");
+            Assert.IsNotNull(resolvedFont, $"System font family '{discoveredFonts.First()}' should have resolved.");
+        }
     }
 }
