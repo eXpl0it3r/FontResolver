@@ -9,7 +9,7 @@
     <RootNamespace>FontResolver.PdfSharp</RootNamespace>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <PackageId>FontResolver.PdfSharp</PackageId>
-    <Version>0.1.0</Version>
+    <Version>1.0.0</Version>
     <Authors>Lukas Dürrenberger</Authors>
     <Company>Lukas Dürrenberger</Company>
     <Description>Font Resolver for PDFSharp provides a cross-platform font resolver to be used with PDFSharp to resolve font paths based on their font names</Description>

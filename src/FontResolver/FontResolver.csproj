@@ -9,7 +9,7 @@
     <RootNamespace>FontResolver</RootNamespace>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <PackageId>FontResolver</PackageId>
-    <Version>0.1.0</Version>
+    <Version>1.0.0</Version>
     <Authors>Lukas Dürrenberger</Authors>
     <Company>Lukas Dürrenberger</Company>
     <Description>Font Resolver is a cross-platform library to resolve font paths based on their font names</Description>
