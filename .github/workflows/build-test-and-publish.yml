@@ -33,6 +33,10 @@ jobs:
     - name: Checkout FontResolver
       uses: actions/checkout@v6
 
+    - name: Install FontConfig on Linux
+      if: runner.os == 'Linux'
+      run: sudo apt-get install -y fontconfig
+
     - name: Setup .NET ${{ matrix.dotnet.version }} SDK
       id: setup-dotnet
       uses: actions/setup-dotnet@v5
