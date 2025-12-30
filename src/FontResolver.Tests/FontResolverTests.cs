@@ -9,16 +9,7 @@ namespace FontResolver.Tests
         public void Resolve_FontExists_FontPathIsReturned()
         {
             // Arrange
-            var fontName = "Arial";
-
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                fontName = "DejaVu Sans";
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            {
-                fontName = "Helvetica";
-            }
+            var fontName = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "DejaVu Sans" : "Arial";
 
             var style = new FontStyle { Bold = false, Italic = false };
 
@@ -53,7 +44,7 @@ namespace FontResolver.Tests
 
             // Act
             FontResolver.RegisterCustomFontDirectory(Directory.GetCurrentDirectory());
-            var fontPath = FontResolver.Resolve("FontStub", style);
+            var fontPath = FontResolver.Resolve("Font Stub", style);
             
             // Assert
             Assert.IsNotNull(fontPath, "Font path should not be null for a font");

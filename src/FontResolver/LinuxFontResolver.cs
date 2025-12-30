@@ -14,7 +14,7 @@ internal static class LinuxFontResolver
 
         try
         {
-            return FontResolver.SearchDirectories(fontName, fontDirectories);
+            return FontResolver.SearchDirectories(fontName, fontDirectories) ?? FontResolver.SearchDirectories(fontName.Replace(" ", string.Empty), fontDirectories);
         }
         catch (Exception ex)
         {
