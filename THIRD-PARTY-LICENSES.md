@@ -9,5 +9,6 @@
 
 ## Tests
 
-- [Microsoft.NET.Test.Sdk](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk) - MIT
+- [GitHubActionsTestLogger](https://www.nuget.org/packages/GitHubActionsTestLogger) - MIT
+- [MSTest](https://www.nuget.org/packages/MSTest) - MIT
 - [PDFsharp-MigraDoc](https://www.nuget.org/packages/PDFsharp-MigraDoc) - MIT

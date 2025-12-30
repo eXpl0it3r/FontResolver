@@ -1,4 +1,5 @@
-﻿using MigraDoc.DocumentObjectModel;
+﻿using MigraDoc;
+using MigraDoc.DocumentObjectModel;
 using MigraDoc.Rendering;
 using PdfSharp.Fonts;
 using System.Runtime.InteropServices;
@@ -23,19 +24,13 @@ namespace FontResolver.PdfSharp.Tests
         [TestMethod]
         public void Register_FontExistsAndPdfGenerated_FontIsResolved()
         {
+            PredefinedFontsAndChars.ErrorFontName = FontResolverPdfSharp.FallbackFont;
+
             var migraDocDocument = new Document();
             var section = migraDocDocument.AddSection();
             var paragraph = section.AddParagraph("This is a test");
 
-            paragraph.Format.Font.Name = "Arial";
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                paragraph.Format.Font.Name = "DejaVu Sans";
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            {
-                paragraph.Format.Font.Name = "Helvetica";
-            }
+            paragraph.Format.Font.Name = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "DejaVu Sans" : "Arial";
 
             var renderer = new PdfDocumentRenderer
             {
@@ -56,12 +51,14 @@ namespace FontResolver.PdfSharp.Tests
             var pdfBytes = stream.ToArray();
             var pdfText = Encoding.ASCII.GetString(pdfBytes);
 
-            Assert.Contains(paragraph.Format.Font.Name, pdfText, "PDF document should contain requested font after rendering.");
+            Assert.Contains(paragraph.Format.Font.Name.Replace(" ", "#20"), pdfText, "PDF document should contain requested font after rendering.");
         }
 
         [TestMethod]
         public void Register_FontDoesNotExistAndPdfGenerated_FallbackFontIsResolved()
         {
+            PredefinedFontsAndChars.ErrorFontName = FontResolverPdfSharp.FallbackFont;
+
             var migraDocDocument = new Document();
             var section = migraDocDocument.AddSection();
             var paragraph = section.AddParagraph("This is a test");
@@ -95,16 +92,7 @@ namespace FontResolver.PdfSharp.Tests
         {
             // Arrange
             var fontResolver = new FontResolverPdfSharp();
-
-            var fontName = "Arial";
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                fontName = "DejaVu Sans";
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            {
-                fontName = "Helvetica";
-            }
+            var fontName = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "DejaVu Sans" : "Arial";
 
             // Act
             var fontInfo = fontResolver.ResolveTypeface(fontName, false, false);
@@ -135,17 +123,7 @@ namespace FontResolver.PdfSharp.Tests
         {
             // Arrange
             var fontResolver = new FontResolverPdfSharp();
-
-            var fontName = "Arial";
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                fontName = "DejaVu Sans";
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            {
-                fontName = "Helvetica";
-            }
-
+            var fontName = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "DejaVu Sans" : "Arial";
             var fontInfo = fontResolver.ResolveTypeface(fontName, false, false);
 
             // Act
@@ -198,11 +176,11 @@ namespace FontResolver.PdfSharp.Tests
 
             // Act
             FontResolverPdfSharp.RegisterCustomFontDirectory(Directory.GetCurrentDirectory());
-            var fontPath = fontResolver.ResolveTypeface("FontStub", false, false);
+            var fontPath = fontResolver.ResolveTypeface("Font Stub", false, false);
 
             // Assert
             Assert.IsNotNull(fontPath, "Font path should not be null for a font");
-            Assert.AreEqual("FontStub", fontPath.FaceName, "Font file is found");
+            Assert.AreEqual("Font Stub", fontPath.FaceName, "Font file is found");
         }
     }
 }

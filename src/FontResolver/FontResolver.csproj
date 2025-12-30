@@ -2,12 +2,12 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>12</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <LangVersion>14</LangVersion>
     <PackageOutputPath>$(OutputPath)</PackageOutputPath>
     <RootNamespace>FontResolver</RootNamespace>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <PackageId>FontResolver</PackageId>
     <Version>0.1.0</Version>
     <Authors>Lukas Dürrenberger</Authors>

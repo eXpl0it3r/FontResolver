@@ -56,7 +56,6 @@ public static class FontResolver
         foreach (var directory in fontDirectories.Concat(CustomFontDirectories).Where(Directory.Exists))
         {
             var fontFiles = Directory.GetFiles(directory, "*.ttf", SearchOption.AllDirectories)
-                .Concat(Directory.GetFiles(directory, "*.ttc", SearchOption.AllDirectories))
                 .Concat(Directory.GetFiles(directory, "*.otf", SearchOption.AllDirectories));
 
             foreach (var fontFile in fontFiles)
