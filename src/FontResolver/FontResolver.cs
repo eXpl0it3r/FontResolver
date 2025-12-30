@@ -29,6 +29,26 @@ public static class FontResolver
         throw new FontResolverException($"Font Resolver does not support the platform '{RuntimeInformation.OSDescription}'.");
     }
 
+    public static List<string> DiscoverFontFamilies()
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            return WindowsFontResolver.DiscoverFontFamilies(CustomFontDirectories);
+        }
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            return LinuxFontResolver.DiscoverFontFamilies(CustomFontDirectories);
+        }
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            return MacOsFontResolver.DiscoverFontFamilies(CustomFontDirectories);
+        }
+
+        throw new FontResolverException($"Font Resolver does not support the platform '{RuntimeInformation.OSDescription}'.");
+    }
+
     public static void RegisterCustomFontDirectory(string fontDirectory)
     {
         CustomFontDirectories.Add(fontDirectory);
