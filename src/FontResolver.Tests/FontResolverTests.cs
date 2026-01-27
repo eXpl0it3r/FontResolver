@@ -56,7 +56,7 @@ namespace FontResolver.Tests
         {
             // Arrange
             var knownFonts = RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
-                ? new[] { "DejaVuSans" }
+                ? new[] { "DejaVu Sans" }
                 : new[] { "Arial", "Times New Roman", "Courier New" };
 
             // Act
