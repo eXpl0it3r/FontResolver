@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FontResolver.Tests", "src\F
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FontResolver.PdfSharp.Tests", "src\FontResolver.PdfSharp.Tests\FontResolver.PdfSharp.Tests.csproj", "{4A56EB11-0634-4C3F-A877-DCAC830068DE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FontResolver.Cli", "src\FontResolver.Cli\FontResolver.Cli.csproj", "{2D223B5E-71A9-4E7C-8DDB-13F6EB5AD346}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{4A56EB11-0634-4C3F-A877-DCAC830068DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4A56EB11-0634-4C3F-A877-DCAC830068DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4A56EB11-0634-4C3F-A877-DCAC830068DE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2D223B5E-71A9-4E7C-8DDB-13F6EB5AD346}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2D223B5E-71A9-4E7C-8DDB-13F6EB5AD346}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2D223B5E-71A9-4E7C-8DDB-13F6EB5AD346}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2D223B5E-71A9-4E7C-8DDB-13F6EB5AD346}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
