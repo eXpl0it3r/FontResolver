@@ -7,6 +7,8 @@ public static class FontResolver
 {
     private static List<string> CustomFontDirectories { get; } = [];
 
+    internal static string[] SupportedFontExtensions { get; } = [ ".ttf", ".otf" ];
+
     public static string? Resolve(string fontName, FontStyle fontStyle)
     {
         var stylizedFontName = StylizeFontName(fontName, fontStyle);
