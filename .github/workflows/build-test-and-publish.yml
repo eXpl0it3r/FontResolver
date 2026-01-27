@@ -27,7 +27,6 @@ jobs:
         - { name: Ubuntu x64, os: ubuntu-24.04 }
         - { name: macOS arm64, os: macos-15 }
         dotnet:
-        - { name: .NET 8, version: '8.0.x' }
         - { name: .NET 9, version: '9.0.x' }
         - { name: .NET 10, version: '10.0.x' }
 
@@ -45,11 +44,29 @@ jobs:
     - name: Verify SDK Installation
       run: dotnet --info
 
+    - name: Install DejaVu Sans Font
+      run: |
+        if ("${{ runner.os }}" -eq "Windows") {
+          choco install dejavufonts -y
+        } elseif ("${{ runner.os }}" -eq "macOS") {
+          brew install font-dejavu
+        } elseif ("${{ runner.os }}" -eq "Linux") {
+          sudo apt-get install -y fonts-dejavu
+        }
+
     - name: Restore Dependencies
       run: dotnet restore FontResolver.sln
 
     - name: Build
       run: dotnet build FontResolver.sln --configuration Release --no-restore
+
+    - name: Run CLI
+      run: |
+        dotnet run --project src/FontResolver.Cli/FontResolver.Cli.csproj --configuration Release --no-build -- list
+        dotnet run --project src/FontResolver.Cli/FontResolver.Cli.csproj --configuration Release --no-build -- resolve --font-name "DejaVu"
+        dotnet run --project src/FontResolver.Cli/FontResolver.Cli.csproj --configuration Release --no-build -- resolve --font-name "DejaVuSans"
+        dotnet run --project src/FontResolver.Cli/FontResolver.Cli.csproj --configuration Release --no-build -- resolve --font-name "DejaVu Sans"
+        dotnet run --project src/FontResolver.Cli/FontResolver.Cli.csproj --configuration Release --no-build -- resolve --font-name "RandomFontNameThatDoesNotExist"
 
     - name: Run Tests
       run: dotnet test FontResolver.sln --configuration Release --no-build --verbosity normal --logger GitHubActions
