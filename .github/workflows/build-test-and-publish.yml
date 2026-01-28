@@ -66,7 +66,9 @@ jobs:
         dotnet run --project src/FontResolver.Cli/FontResolver.Cli.csproj --configuration Release --no-build -- resolve --font-name "DejaVu"
         dotnet run --project src/FontResolver.Cli/FontResolver.Cli.csproj --configuration Release --no-build -- resolve --font-name "DejaVuSans"
         dotnet run --project src/FontResolver.Cli/FontResolver.Cli.csproj --configuration Release --no-build -- resolve --font-name "DejaVu Sans"
+        dotnet run --project src/FontResolver.Cli/FontResolver.Cli.csproj --configuration Release --no-build -- ls
         dotnet run --project src/FontResolver.Cli/FontResolver.Cli.csproj --configuration Release --no-build -- resolve --font-name "RandomFontNameThatDoesNotExist"
+        dotnet run --project src/FontResolver.Cli/FontResolver.Cli.csproj --configuration Release --no-build -- all
 
     - name: Run Tests
       run: dotnet test FontResolver.sln --configuration Release --no-build --verbosity normal --logger GitHubActions

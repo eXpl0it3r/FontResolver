@@ -16,7 +16,7 @@ internal static class WindowsFontResolver
 
     public static List<string> DiscoverFontFamilies(List<string> customFontDirectories)
     {
-        var discoveredFonts = new List<string>();
+        var discoveredFonts = new HashSet<string>();
 
         try
         {
@@ -27,7 +27,7 @@ internal static class WindowsFontResolver
             {
                 if (registryKey == null)
                 {
-                    throw new FontResolverException("Unable to open Windows font registry key");
+                    continue;
                 }
 
                 foreach (var fontName in registryKey.GetValueNames())
@@ -40,7 +40,33 @@ internal static class WindowsFontResolver
                         continue;
                     }
 
-                    discoveredFonts.Add(fontName);
+                    // If the path is not absolute, the font is in the Windows Fonts folder
+                    if (!Path.IsPathRooted(fontFile))
+                    {
+                        fontFile = Path.Combine(
+                            Environment.GetFolderPath(Environment.SpecialFolder.Fonts),
+                            fontFile
+                        );
+                    }
+
+                    // Try to extract the actual font family name from the file
+                    var extractedFontFamily = FontParser.ExtractFontFamily(fontFile);
+                    if (extractedFontFamily?.FamilyName != null)
+                    {
+                        discoveredFonts.Add(extractedFontFamily.FamilyName);
+                    }
+                    else
+                    {
+                        // Fallback to cleaning up the registry entry name
+                        var cleanedName = fontName.Replace("(TrueType)", string.Empty)
+                            .Replace("(OpenType)", string.Empty)
+                            .Replace("(type 1)", string.Empty)
+                            .Trim();
+                        if (!string.IsNullOrEmpty(cleanedName))
+                        {
+                            discoveredFonts.Add(cleanedName);
+                        }
+                    }
                 }
             }
         }
@@ -52,30 +78,24 @@ internal static class WindowsFontResolver
         foreach (var customFontDirectory in customFontDirectories.Where(Directory.Exists))
         {
             var fontFiles = Directory.GetFiles(customFontDirectory, "*.ttf", SearchOption.AllDirectories)
-                .Concat(Directory.GetFiles(customFontDirectory, "*.otf", SearchOption.AllDirectories))
-                .Select(Path.GetFileNameWithoutExtension);
+                .Concat(Directory.GetFiles(customFontDirectory, "*.otf", SearchOption.AllDirectories));
 
-            discoveredFonts.AddRange(fontFiles);
+            foreach (var fontFile in fontFiles)
+            {
+                var extractedFontFamily = FontParser.ExtractFontFamily(fontFile);
+                if (extractedFontFamily?.FamilyName != null)
+                {
+                    discoveredFonts.Add(extractedFontFamily.FamilyName);
+                }
+                else
+                {
+                    // Fallback to filename
+                    discoveredFonts.Add(Path.GetFileNameWithoutExtension(fontFile));
+                }
+            }
         }
 
-        return discoveredFonts.Select(f => f.Replace("(TrueType)", string.Empty)
-            .Replace("(OpenType)", string.Empty)
-            .Replace("(type 1)", string.Empty)
-            .Replace("Extra Bold", string.Empty)
-            .Replace("ExtB", string.Empty)
-            .Replace("Bold", string.Empty)
-            .Replace("Italic", string.Empty)
-            .Replace("Condensed", string.Empty)
-            .Replace("Regular", string.Empty)
-            .Replace("Semilight", string.Empty)
-            .Replace("SemiLight", string.Empty)
-            .Replace("Light", string.Empty)
-            .Replace("Oblique", string.Empty)
-            .Replace("Black", string.Empty)
-            .Replace("Semibold", string.Empty)
-            .Trim())
-            .Distinct()
-            .ToList();
+        return discoveredFonts.ToList();
     }
 
     private static string? SearchRegistry(string fontName)

@@ -30,7 +30,7 @@ internal static class LinuxFontResolver
 
         try
         {
-            return FontResolver.SearchDirectories(fontName, FontDirectories) ?? FontResolver.SearchDirectories(fontName.Replace(" ", string.Empty), FontDirectories);
+            return FontResolver.SearchDirectories(fontName, FontDirectories);
         }
         catch (Exception ex)
         {
@@ -174,47 +174,31 @@ internal static class LinuxFontResolver
 
     private static List<string> DiscoverFontFamiliesWithDirectoryScan(List<string> customFontDirectories)
     {
-        var discoveredFonts = new List<string>();
+        var discoveredFonts = new HashSet<string>();
 
         foreach (var fontDirectory in FontDirectories.Concat(customFontDirectories).Where(Directory.Exists))
         {
             var fontFiles = new List<string>();
             foreach (var extension in FontResolver.SupportedFontExtensions)
             {
-                fontFiles.AddRange(Directory.GetFiles(fontDirectory, $"*{extension}", SearchOption.AllDirectories)
-                                            .Select(Path.GetFileNameWithoutExtension));
+                fontFiles.AddRange(Directory.GetFiles(fontDirectory, $"*{extension}", SearchOption.AllDirectories));
             }
 
-            discoveredFonts.AddRange(fontFiles);
+            foreach (var fontFile in fontFiles)
+            {
+                var extractedFontFamily = FontParser.ExtractFontFamily(fontFile);
+                if (extractedFontFamily?.FamilyName != null)
+                {
+                    discoveredFonts.Add(extractedFontFamily.FamilyName);
+                }
+                else
+                {
+                    // Fallback to filename
+                    discoveredFonts.Add(Path.GetFileNameWithoutExtension(fontFile));
+                }
+            }
         }
 
-        return discoveredFonts.Select(f => f.Replace("[wdth,wght]", string.Empty)
-                .Replace("[wght]", string.Empty)
-                .Replace("-B", string.Empty)
-                .Replace("Extra Bold", string.Empty)
-                .Replace("ExtB", string.Empty)
-                .Replace("Bold", string.Empty)
-                .Replace("Semibold", string.Empty)
-                .Replace("-BI", string.Empty)
-                .Replace("-I", string.Empty)
-                .Replace("Italic", string.Empty)
-                .Replace("-RI", string.Empty)
-                .Replace("-C", string.Empty)
-                .Replace("Condensed", string.Empty)
-                .Replace("Regular", string.Empty)
-                .Replace("-R", string.Empty)
-                .Replace("Semilight", string.Empty)
-                .Replace("SemiLight", string.Empty)
-                .Replace("Light", string.Empty)
-                .Replace("-L", string.Empty)
-                .Replace("-LI", string.Empty)
-                .Replace("Oblique", string.Empty)
-                .Replace("Black", string.Empty)
-                .Replace("-M", string.Empty)
-                .Replace("-MI", string.Empty)
-                .Replace("-", string.Empty)
-                .Trim())
-            .Distinct()
-            .ToList();
+        return discoveredFonts.ToList();
     }
 }
