@@ -82,6 +82,18 @@ public static class FontResolver
 
             foreach (var fontFile in fontFiles)
             {
+                // Try to extract the actual font family name from the file
+                var extractedFontFamily = FontParser.ExtractFontFamily(fontFile);
+                if (extractedFontFamily != null)
+                {
+                    var normalizedFontFamily = NormalizeFontFileName(extractedFontFamily.FamilyName ?? "");
+                    if (normalizedFontFamily == fontName.ToLowerInvariant())
+                    {
+                        return fontFile;
+                    }
+                }
+
+                // Fallback to filename matching if extraction fails
                 var fileName = Path.GetFileNameWithoutExtension(fontFile);
                 var normalizedFontName = NormalizeFontFileName(fileName);
 
