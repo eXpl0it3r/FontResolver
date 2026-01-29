@@ -1,21 +1,19 @@
 # Font Resolver
 
-Font Resolver is a cross-platform library to resolve font paths based on their font names.
+Font Resolver is a cross-platform library to resolve fonts based on their font names.
 
 The library was originally developed to be used with [PDFsharp](https://github.com/empira/PDFsharp).
 However, since resolving font files cross-platform can be useful in general, two separate packages have been created:
 
-- [`FontResolver`](https://www.nuget.org/packages/FontResolver)
-- [`FontResolver.PdfSharp`](https://www.nuget.org/packages/FontResolver.PdfSharp)
+- [`FontResolver`](https://www.nuget.org/packages/FontResolver) - Generic font resolver
+- [`FontResolver.PdfSharp`](https://www.nuget.org/packages/FontResolver.PdfSharp) - Font resolver implementing the PDFsharp interface
 
 ## Goals
 
-- Resolve font files cross-platform
+- Resolve fonts cross-platform
 - Keep the dependency graph minimal
 - Remain .NET Standard 2.0 compatible
 - Turn contributors into maintainers
-
-**Note:** TrueType Collections (`*.ttc`) are not supported at the moment, as PDFsharp can't load them.
 
 ## Install
 
@@ -31,17 +29,48 @@ If you intend to use FontResolver with PDFsharp, use the `FontResolver.PdfSharp`
 dotnet add package FontResolver.PdfSharp
 ```
 
+## Process
+
+- Only `*.ttf` and `*.otf` files are supported
+  - TrueType Collections (`*.ttc`) are not supported
+- Discovery
+  - Windows: Available fonts are retrieved from the registry
+  - Linux: If available, fonts are discovered using FontConfig's `fc list` 
+  - Platform specific directories are being scanned
+  - Registered custom directories are being scanned
+- Parsing
+  - A basic TTF/OTF parser extracts the desired font metadata
+  - As a fallback the font metadata is heuristically extracted from the font name
+- Resolving
+  - The name matching priority is:
+    - Preferred Family Name
+    - Legacy Family Name
+    - Full Name
+    - PostScript Name
+    - Match Family
+    - Match Style
+    - Match Weight
+    - Match Width
+    - Fallback
+  - The resolve strategies are:
+    - `Strict`: Name, Style, Weight, and Width need to match
+    - `Closest`:
+      - Name should match
+      - Style: `Oblique` is resolved as `Italic`, when there is no `Italic`
+      - Weight: One category above or below is picked, when there is no match
+      - Width: One category above or below is picked, when there is no match
+
 ## Usage
 
 ### Standalone
 
 ```csharp
-using FontResolver;
+using FontResolution;
 
 // ...
 
-var style = new FontStyle(bold: false, italic: false);
-var font = FontResolver.Resolve("Arial", style with { Bold = true });
+var attributes = new FontAttributes();
+var font = FontResolver.Resolve("Arial", attributes with { Weight = FontWeight.Bold });
 ```
 
 ### PDFsharp

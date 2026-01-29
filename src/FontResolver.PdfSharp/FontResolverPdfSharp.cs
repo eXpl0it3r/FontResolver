@@ -5,27 +5,28 @@ namespace FontResolution.PdfSharp;
 
 public class FontResolverPdfSharp : IFontResolver
 {
+    // Using a cache to bridge the two-phased resolving calls by PDFSharp
     private Dictionary<string, string> FontPathCache { get; } = new();
-
+    
     public static string FallbackFont => "Tuffy";
 
-    public FontResolverInfo? ResolveTypeface(string familyName, bool isBold, bool isItalic)
+    public FontResolverInfo? ResolveTypeface(string familyName, bool bold, bool italic)
     {
-        var style = new FontStyle(isBold, isItalic);
-        var stylizedFontName = FontResolver.StylizeFontName(familyName, style);
-
+        var style = new FontAttributes(bold ? FontWeight.Bold : FontWeight.Normal, italic ? FontStyle.Italic : FontStyle.Normal);
+        var stylizedFontName = FontNameResolver.StylizeFontNameStrict(familyName, style);
+        
         if (FontPathCache.ContainsKey(stylizedFontName))
         {
             return new FontResolverInfo(stylizedFontName);
         }
-
+        
         var fontPath = FontResolver.Resolve(familyName, style);
-
+        
         if (fontPath == null)
         {
-            return new FontResolverInfo(FontResolver.StylizeFontName(FallbackFont, style));
+            return new FontResolverInfo(FontNameResolver.StylizeFontNameStrict(FallbackFont, style));
         }
-
+        
         FontPathCache[stylizedFontName] = fontPath;
 
         return new FontResolverInfo(stylizedFontName);

@@ -9,10 +9,10 @@
     <RootNamespace>FontResolution.PdfSharp</RootNamespace>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <PackageId>FontResolver.PdfSharp</PackageId>
-    <Version>1.1.0</Version>
+    <Version>2.0.0</Version>
     <Authors>Lukas Dürrenberger</Authors>
     <Company>Lukas Dürrenberger</Company>
-    <Description>Font Resolver for PDFSharp provides a cross-platform font resolver to be used with PDFSharp to resolve font paths based on their font names</Description>
+    <Description>Font Resolver for PDFSharp provides a cross-platform font resolver to be used with PDFSharp to resolve fonts based on their font names</Description>
     <PackageTags>fonts;pdfsharp;fontresolver;cross-platform</PackageTags>
     <RepositoryUrl>https://github.com/eXpl0it3r/FontResolver</RepositoryUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -33,6 +33,7 @@
   <ItemGroup>
     <None Include="../../README.md" Pack="true" PackagePath="" />
     <None Include="../../LICENSE" Pack="true" PackagePath="" />
+    <None Include="../../CHANGELOG.md" Pack="true" PackagePath="" />
   </ItemGroup>
 
   <ItemGroup>

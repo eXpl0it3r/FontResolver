@@ -1,6 +1,8 @@
 ﻿using System.Runtime.InteropServices;
 using ConsoleAppFramework;
 using FontResolution;
+using FontResolution.Discovery;
+using FontResolution.Parsing;
 
 var app = ConsoleApp.Create();
 app.Add<FontResolverCli>();
@@ -16,7 +18,7 @@ public class FontResolverCli
             FontResolver.RegisterCustomFontDirectory(fontDirectory);
         }
 
-        var font = FontResolver.Resolve(fontName, new FontStyle());
+        var font = FontResolver.Resolve(fontName, new FontAttributes());
 
         if (font is null)
         {
@@ -57,7 +59,7 @@ public class FontResolverCli
 
         foreach (var fontFamily in fontFamilies)
         {
-            var font = FontResolver.Resolve(fontFamily, new FontStyle());
+            var font = FontResolver.Resolve(fontFamily, new FontAttributes());
 
             if (font is null)
             {
@@ -65,7 +67,7 @@ public class FontResolverCli
                 continue;
             }
 
-            var fontMetadata = FontParser.ExtractFontFamily(font);
+            var fontMetadata = FontParser.ExtractFontMetadata(font);
             var fontFamilyName = fontMetadata?.FamilyName ?? "Unknown";
             
             Console.WriteLine($"Found {fontFamily} ({fontFamilyName}) at {font}");
@@ -80,6 +82,7 @@ public class FontResolverCli
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             fontDirectories.Add(Environment.GetFolderPath(Environment.SpecialFolder.Fonts));
+            fontDirectories.Add(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "AppData/Local/Microsoft/Windows/Fonts"));
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
@@ -97,12 +100,11 @@ public class FontResolverCli
 
         foreach (var directory in fontDirectories.Where(Directory.Exists))
         {
-            var fontFiles = Directory.GetFiles(directory, "*.ttf", SearchOption.AllDirectories)
-                .Concat(Directory.GetFiles(directory, "*.otf", SearchOption.AllDirectories));
+            var fontFiles = FontDiscoveryService.SupportedFontExtensions.SelectMany(e => Directory.GetFiles(directory, $"*{e}", SearchOption.AllDirectories));
 
             foreach (var fontFile in fontFiles)
             {
-                var fontMetadata = FontParser.ExtractFontFamily(fontFile);
+                var fontMetadata = FontParser.ExtractFontMetadata(fontFile);
 
                 if (fontMetadata is null)
                 {
@@ -110,7 +112,17 @@ public class FontResolverCli
                     continue;
                 }
                 
-                Console.WriteLine($"Found {fontMetadata.FamilyName} / {fontMetadata.Subfamily} / {fontMetadata.PreferredFamily} / {fontMetadata.PreferredSubfamily} / {fontMetadata.FullName} / {fontMetadata.PostScriptName} at {fontFile}");
+                Console.WriteLine($"Found {fontFile}");
+                Console.WriteLine($"\tFamilyName: {fontMetadata.FamilyName}");
+                Console.WriteLine($"\tSubfamily: {fontMetadata.Subfamily}");
+                Console.WriteLine($"\tPreferredFamily: {fontMetadata.PreferredFamily}");
+                Console.WriteLine($"\tPreferredSubfamily: {fontMetadata.PreferredSubfamily}");
+                Console.WriteLine($"\tFullName: {fontMetadata.FullName}");
+                Console.WriteLine($"\tPostScriptName: {fontMetadata.PostScriptName}");
+                Console.WriteLine($"\tWeight: {fontMetadata.Attributes?.Weight}");
+                Console.WriteLine($"\tStyle: {fontMetadata.Attributes?.Style}");
+                Console.WriteLine($"\tWidth: {fontMetadata.Attributes?.Width}");
+                Console.WriteLine();
             }
         }
     }
