@@ -1,145 +1,58 @@
-using System.Runtime.InteropServices;
-using System.Text;
+using FontResolution.Discovery;
 
 namespace FontResolution;
 
 public static class FontResolver
 {
-    private static List<string> CustomFontDirectories { get; } = [];
+    private readonly static object InitializationLock = new();
+    
+    private static FontDiscoveryService? _discoveryService;
 
-    internal static string[] SupportedFontExtensions { get; } = [ ".ttf", ".otf" ];
-
-    public static string? Resolve(string fontName, FontStyle fontStyle)
+    public static string? Resolve(string fontName, FontResolveStrategy resolveStrategy = FontResolveStrategy.Strict)
     {
-        var stylizedFontName = StylizeFontName(fontName, fontStyle);
+        return Resolve(fontName, new FontAttributes(), resolveStrategy);
+    }
+    
+    public static string? Resolve(string fontName, FontAttributes fontAttributes, FontResolveStrategy resolveStrategy = FontResolveStrategy.Strict)
+    {
+        EnsureInitialized();
 
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        return resolveStrategy switch
         {
-            return WindowsFontResolver.Resolve(stylizedFontName);
-        }
-
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-        {
-            return LinuxFontResolver.Resolve(stylizedFontName);
-        }
-
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-        {
-            return MacOsFontResolver.Resolve(stylizedFontName);
-        }
-
-        throw new FontResolverException($"Font Resolver does not support the platform '{RuntimeInformation.OSDescription}'.");
+            FontResolveStrategy.Closest => FontNameResolver.StylizeFontNameClosest(fontName, fontAttributes)
+                .Select(stylizedFontName => _discoveryService!.ResolveFontFilePath(stylizedFontName))
+                .FirstOrDefault(),
+            _ => _discoveryService!.ResolveFontFilePath(FontNameResolver.StylizeFontNameStrict(fontName, fontAttributes))
+        };
     }
 
     public static List<string> DiscoverFontFamilies()
     {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            return WindowsFontResolver.DiscoverFontFamilies(CustomFontDirectories);
-        }
-
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-        {
-            return LinuxFontResolver.DiscoverFontFamilies(CustomFontDirectories);
-        }
-
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-        {
-            return MacOsFontResolver.DiscoverFontFamilies(CustomFontDirectories);
-        }
-
-        throw new FontResolverException($"Font Resolver does not support the platform '{RuntimeInformation.OSDescription}'.");
+        EnsureInitialized();
+        return _discoveryService!.DiscoverFontFamilies();
     }
 
     public static void RegisterCustomFontDirectory(string fontDirectory)
     {
-        CustomFontDirectories.Add(fontDirectory);
+        EnsureInitialized();
+        _discoveryService!.RegisterCustomFontDirectory(fontDirectory);
     }
 
-    public static string StylizeFontName(string fontName, FontStyle fontStyle)
+    private static void EnsureInitialized()
     {
-        var stylizedFontName = new StringBuilder(fontName);
-
-        if (fontStyle.Bold)
+        if (_discoveryService is not null)
         {
-            stylizedFontName.Append(" Bold");
+            return;
         }
 
-        if (fontStyle.Italic)
+        lock (InitializationLock)
         {
-            stylizedFontName.Append(" Italic");
-        }
-
-        return stylizedFontName.ToString();
-    }
-
-    internal static string? SearchDirectories(string fontName, string[] fontDirectories)
-    {
-        foreach (var directory in fontDirectories.Concat(CustomFontDirectories).Where(Directory.Exists))
-        {
-            var fontFiles = Directory.GetFiles(directory, "*.ttf", SearchOption.AllDirectories)
-                .Concat(Directory.GetFiles(directory, "*.otf", SearchOption.AllDirectories));
-
-            foreach (var fontFile in fontFiles)
+            if (_discoveryService is not null)
             {
-                // Try to extract the actual font family name from the file
-                var extractedFontFamily = FontParser.ExtractFontFamily(fontFile);
-                if (extractedFontFamily != null)
-                {
-                    var normalizedFontFamily = NormalizeFontFileName(extractedFontFamily.FamilyName ?? "");
-                    if (normalizedFontFamily == fontName.ToLowerInvariant())
-                    {
-                        return fontFile;
-                    }
-                }
-
-                // Fallback to filename matching if extraction fails
-                var fileName = Path.GetFileNameWithoutExtension(fontFile);
-                var normalizedFontName = NormalizeFontFileName(fileName);
-
-                if (normalizedFontName == fontName.ToLowerInvariant())
-                {
-                    return fontFile;
-                }
+                return;
             }
+
+            _discoveryService = new FontDiscoveryService();
         }
-
-        return null;
-    }
-
-    internal static string NormalizeFontFileName(string fileName)
-    {
-        var normalized = fileName.ToLowerInvariant()
-            .Replace("-", " ")
-            .Replace("_", " ");
-        
-        // Remove common suffixes
-        var suffixes = new[] { " (truetype)", " (opentype)", " (type 1)" };
-        foreach (var suffix in suffixes)
-        {
-            if (normalized.EndsWith(suffix))
-            {
-                normalized = normalized.Substring(0, normalized.Length - suffix.Length).Trim();
-                break;
-            }
-        }
-
-        // Handle common patterns like "Arial-Bold" -> "arial bold"
-        // or "DejaVuSans-BoldOblique" -> "dejavusans bold italic"
-        normalized = normalized
-            .Replace("bolditalic", " bold italic")
-            .Replace("boldoblique", " bold italic")
-            .Replace("bold", " bold")
-            .Replace("italic", " italic")
-            .Replace("oblique", " italic")
-            .Replace("regular", "")
-            .Replace("normal", "");
-
-        while (normalized.Contains("  "))
-        {
-            normalized = normalized.Replace("  ", " ");
-        }
-
-        return normalized.Trim();
     }
 }

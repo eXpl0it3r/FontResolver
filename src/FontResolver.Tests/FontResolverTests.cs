@@ -11,7 +11,7 @@ namespace FontResolution.Tests
             // Arrange
             var fontName = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "DejaVu Sans" : "Arial";
 
-            var style = new FontStyle { Bold = false, Italic = false };
+            var style = new FontAttributes { Weight = FontWeight.Normal, Style = FontStyle.Normal };
 
             // Act
             var fontPath = FontResolver.Resolve(fontName, style);
@@ -27,7 +27,7 @@ namespace FontResolution.Tests
             // Arrange
             const string fontName = "RandomFontNameThatDoesNotExist";
 
-            var style = new FontStyle { Bold = false, Italic = false };
+            var style = new FontAttributes { Weight = FontWeight.Normal, Style = FontStyle.Normal };
 
             // Act
             var fontPath = FontResolver.Resolve(fontName, style);
@@ -40,7 +40,7 @@ namespace FontResolution.Tests
         public void RegisterCustomFontDirectory_DirectoryAdded_FontIsResolvedFromCustomDirectory()
         {
             // Arrange
-            var style = new FontStyle { Bold = false, Italic = false };
+            var style = new FontAttributes { Weight = FontWeight.Normal, Style = FontStyle.Normal };
 
             // Act
             FontResolver.RegisterCustomFontDirectory(Directory.GetCurrentDirectory());
@@ -57,7 +57,9 @@ namespace FontResolution.Tests
             // Arrange
             var knownFonts = RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
                 ? new[] { "DejaVu Sans" }
-                : new[] { "Arial", "Times New Roman", "Courier New" };
+                : RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                    ? new[] { "Arial", "Arial Black", "Times New Roman", "Courier New" }
+                    : new[] { "Arial", "Times New Roman", "Courier New" };
 
             // Act
             var discoveredFonts = FontResolver.DiscoverFontFamilies();
@@ -74,7 +76,7 @@ namespace FontResolution.Tests
         {
             // Arrange & Act
             var discoveredFonts = FontResolver.DiscoverFontFamilies();
-            var resolvedFont = FontResolver.Resolve(discoveredFonts[0], new FontStyle());
+            var resolvedFont = FontResolver.Resolve(discoveredFonts[0], new FontAttributes());
 
             // Assert
             Assert.IsNotEmpty(discoveredFonts, "System should have fonts.");

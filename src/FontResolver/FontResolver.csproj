@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>netstandard2.0;net8.0;net9.0;net10.0</TargetFrameworks>
     <LangVersion>12</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -9,10 +9,10 @@
     <RootNamespace>FontResolution</RootNamespace>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <PackageId>FontResolver</PackageId>
-    <Version>1.1.0</Version>
+    <Version>2.0.0</Version>
     <Authors>Lukas Dürrenberger</Authors>
     <Company>Lukas Dürrenberger</Company>
-    <Description>Font Resolver is a cross-platform library to resolve font paths based on their font names</Description>
+    <Description>Font Resolver is a cross-platform library to resolve fonts based on their font names</Description>
     <PackageTags>fonts;fontresolver;cross-platform</PackageTags>
     <RepositoryUrl>https://github.com/eXpl0it3r/FontResolver</RepositoryUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -22,10 +22,12 @@
   <ItemGroup>
     <None Include="../../README.md" Pack="true" PackagePath="" />
     <None Include="../../LICENSE" Pack="true" PackagePath="" />
+    <None Include="../../CHANGELOG.md" Pack="true" PackagePath="" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
+    <PackageReference Include="System.Memory" Version="4.6.3" Condition=" '$(TargetFramework)' == 'netstandard2.0' " />
   </ItemGroup>
 
   <ItemGroup>
