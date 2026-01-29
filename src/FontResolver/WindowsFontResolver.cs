@@ -1,7 +1,6 @@
-﻿using System.IO;
-using static Microsoft.Win32.Registry;
+﻿using static Microsoft.Win32.Registry;
 
-namespace FontResolver;
+namespace FontResolution;
 
 internal static class WindowsFontResolver
 {
@@ -11,7 +10,7 @@ internal static class WindowsFontResolver
     {
         var registryFont = SearchRegistry(fontName);
 
-        return registryFont ?? FontResolver.SearchDirectories(fontName, []);
+        return registryFont ?? FontResolution.FontResolver.SearchDirectories(fontName, []);
     }
 
     public static List<string> DiscoverFontFamilies(List<string> customFontDirectories)
@@ -129,7 +128,7 @@ internal static class WindowsFontResolver
                         );
                     }
 
-                    var normalizedFontName = FontResolver.NormalizeFontFileName(valueName);
+                    var normalizedFontName = FontResolution.FontResolver.NormalizeFontFileName(valueName);
 
                     if (normalizedFontName == fontName.ToLowerInvariant())
                     {

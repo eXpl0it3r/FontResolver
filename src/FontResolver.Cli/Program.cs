@@ -1,6 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 using ConsoleAppFramework;
-using FontResolver;
+using FontResolution;
 
 var app = ConsoleApp.Create();
 app.Add<FontResolverCli>();
@@ -13,10 +13,10 @@ public class FontResolverCli
     {
         if (!string.IsNullOrEmpty(fontDirectory))
         {
-            FontResolver.FontResolver.RegisterCustomFontDirectory(fontDirectory);
+            FontResolver.RegisterCustomFontDirectory(fontDirectory);
         }
 
-        var font = FontResolver.FontResolver.Resolve(fontName, new FontStyle());
+        var font = FontResolver.Resolve(fontName, new FontStyle());
 
         if (font is null)
         {
@@ -30,7 +30,7 @@ public class FontResolverCli
     [Command("list")]
     public void ListFontFamilies()
     {
-        var fontFamilies = FontResolver.FontResolver.DiscoverFontFamilies();
+        var fontFamilies = FontResolver.DiscoverFontFamilies();
 
         if (fontFamilies.Count == 0)
         {
@@ -47,7 +47,7 @@ public class FontResolverCli
     [Command("all")]
     public void ResolveAll()
     {
-        var fontFamilies = FontResolver.FontResolver.DiscoverFontFamilies();
+        var fontFamilies = FontResolver.DiscoverFontFamilies();
 
         if (fontFamilies.Count == 0)
         {
@@ -57,7 +57,7 @@ public class FontResolverCli
 
         foreach (var fontFamily in fontFamilies)
         {
-            var font = FontResolver.FontResolver.Resolve(fontFamily, new FontStyle());
+            var font = FontResolver.Resolve(fontFamily, new FontStyle());
 
             if (font is null)
             {
@@ -65,7 +65,7 @@ public class FontResolverCli
                 continue;
             }
 
-            var fontMetadata = FontResolver.FontParser.ExtractFontFamily(font);
+            var fontMetadata = FontParser.ExtractFontFamily(font);
             var fontFamilyName = fontMetadata?.FamilyName ?? "Unknown";
             
             Console.WriteLine($"Found {fontFamily} ({fontFamilyName}) at {font}");
@@ -102,7 +102,7 @@ public class FontResolverCli
 
             foreach (var fontFile in fontFiles)
             {
-                var fontMetadata = FontResolver.FontParser.ExtractFontFamily(fontFile);
+                var fontMetadata = FontParser.ExtractFontFamily(fontFile);
 
                 if (fontMetadata is null)
                 {

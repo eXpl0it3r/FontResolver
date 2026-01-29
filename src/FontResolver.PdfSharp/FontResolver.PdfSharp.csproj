@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <PackageOutputPath>$(OutputPath)</PackageOutputPath>
-    <RootNamespace>FontResolver.PdfSharp</RootNamespace>
+    <RootNamespace>FontResolution.PdfSharp</RootNamespace>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <PackageId>FontResolver.PdfSharp</PackageId>
     <Version>1.1.0</Version>

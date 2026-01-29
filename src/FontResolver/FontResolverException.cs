@@ -1,4 +1,4 @@
-﻿namespace FontResolver;
+﻿namespace FontResolution;
 
 public class FontResolverException : Exception
 {

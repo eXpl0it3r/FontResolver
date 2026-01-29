@@ -1,7 +1,7 @@
 using System.Reflection;
 using PdfSharp.Fonts;
 
-namespace FontResolver.PdfSharp;
+namespace FontResolution.PdfSharp;
 
 public class FontResolverPdfSharp : IFontResolver
 {

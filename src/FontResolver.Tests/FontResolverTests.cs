@@ -1,6 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace FontResolver.Tests
+namespace FontResolution.Tests
 {
     [TestClass]
     public sealed class FontResolverTests
@@ -74,11 +74,11 @@ namespace FontResolver.Tests
         {
             // Arrange & Act
             var discoveredFonts = FontResolver.DiscoverFontFamilies();
-            var resolvedFont = FontResolver.Resolve(discoveredFonts.First(), new FontStyle());
+            var resolvedFont = FontResolver.Resolve(discoveredFonts[0], new FontStyle());
 
             // Assert
             Assert.IsNotEmpty(discoveredFonts, "System should have fonts.");
-            Assert.IsNotNull(resolvedFont, $"System font family '{discoveredFonts.First()}' should have resolved.");
+            Assert.IsNotNull(resolvedFont, $"System font family '{discoveredFonts[0]}' should have resolved.");
         }
     }
 }
