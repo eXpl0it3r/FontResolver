@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <PackageOutputPath>$(OutputPath)</PackageOutputPath>
-    <RootNamespace>FontResolver</RootNamespace>
+    <RootNamespace>FontResolution</RootNamespace>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <PackageId>FontResolver</PackageId>
     <Version>1.1.0</Version>

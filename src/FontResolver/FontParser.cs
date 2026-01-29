@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace FontResolver;
+namespace FontResolution;
 
 /// <summary>
 /// Represents extracted font metadata from a TTF/OTF file.

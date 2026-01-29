@@ -1,11 +1,11 @@
-﻿using MigraDoc;
+﻿using System.Runtime.InteropServices;
+using System.Text;
+using MigraDoc;
 using MigraDoc.DocumentObjectModel;
 using MigraDoc.Rendering;
 using PdfSharp.Fonts;
-using System.Runtime.InteropServices;
-using System.Text;
 
-namespace FontResolver.PdfSharp.Tests
+namespace FontResolution.PdfSharp.Tests
 {
     [TestClass]
     public sealed class FontResolverPdfSharpTests

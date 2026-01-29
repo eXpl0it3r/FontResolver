@@ -1,4 +1,4 @@
-namespace FontResolver;
+namespace FontResolution;
 
 internal static class MacOsFontResolver
 {
@@ -13,7 +13,7 @@ internal static class MacOsFontResolver
     {
         try
         {
-            return FontResolver.SearchDirectories(fontName, FontDirectories);
+            return FontResolution.FontResolver.SearchDirectories(fontName, FontDirectories);
         }
         catch (Exception ex)
         {

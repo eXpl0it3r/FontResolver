@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace FontResolver;
+namespace FontResolution;
 
 public static class FontResolver
 {

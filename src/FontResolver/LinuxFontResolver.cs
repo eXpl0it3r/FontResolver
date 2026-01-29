@@ -1,7 +1,6 @@
 using System.Diagnostics;
-using System.IO;
 
-namespace FontResolver;
+namespace FontResolution;
 
 internal static class LinuxFontResolver
 {
@@ -30,7 +29,7 @@ internal static class LinuxFontResolver
 
         try
         {
-            return FontResolver.SearchDirectories(fontName, FontDirectories);
+            return FontResolution.FontResolver.SearchDirectories(fontName, FontDirectories);
         }
         catch (Exception ex)
         {
@@ -85,7 +84,7 @@ internal static class LinuxFontResolver
         if (process.ExitCode == 0 && !string.IsNullOrWhiteSpace(output))
         {
             var fontPath = output.Trim();
-            if (File.Exists(fontPath) && FontResolver.SupportedFontExtensions.Any(ext => fontPath.EndsWith(ext, StringComparison.InvariantCultureIgnoreCase)))
+            if (File.Exists(fontPath) && FontResolution.FontResolver.SupportedFontExtensions.Any(ext => fontPath.EndsWith(ext, StringComparison.InvariantCultureIgnoreCase)))
             {
                 return fontPath;
             }
@@ -179,7 +178,7 @@ internal static class LinuxFontResolver
         foreach (var fontDirectory in FontDirectories.Concat(customFontDirectories).Where(Directory.Exists))
         {
             var fontFiles = new List<string>();
-            foreach (var extension in FontResolver.SupportedFontExtensions)
+            foreach (var extension in FontResolution.FontResolver.SupportedFontExtensions)
             {
                 fontFiles.AddRange(Directory.GetFiles(fontDirectory, $"*{extension}", SearchOption.AllDirectories));
             }
