@@ -1,44 +1,52 @@
 using System.Reflection;
+using System.Text;
 using PdfSharp.Fonts;
 
 namespace FontResolution.PdfSharp;
 
 public class FontResolverPdfSharp : IFontResolver
 {
-    // Using a cache to bridge the two-phased resolving calls by PDFSharp
-    private Dictionary<string, string> FontPathCache { get; } = new();
-    
+    private readonly Dictionary<string, FontMetadata> _fontCache = new();
+
     public static string FallbackFont => "Tuffy";
+    public FontResolveStrategy ResolveStrategy { get; set; } = FontResolveStrategy.Strict;
 
-    public FontResolverInfo? ResolveTypeface(string familyName, bool bold, bool italic)
+    public FontResolverInfo ResolveTypeface(string familyName, bool bold, bool italic)
     {
-        var style = new FontAttributes(bold ? FontWeight.Bold : FontWeight.Normal, italic ? FontStyle.Italic : FontStyle.Normal);
-        var stylizedFontName = FontNameResolver.StylizeFontNameStrict(familyName, style);
-        
-        if (FontPathCache.ContainsKey(stylizedFontName))
-        {
-            return new FontResolverInfo(stylizedFontName);
-        }
-        
-        var fontPath = FontResolver.Resolve(familyName, style);
-        
-        if (fontPath == null)
-        {
-            return new FontResolverInfo(FontNameResolver.StylizeFontNameStrict(FallbackFont, style));
-        }
-        
-        FontPathCache[stylizedFontName] = fontPath;
+        var fontAttributes = new FontAttributes(
+            Style: italic ? FontStyle.Italic : FontStyle.Normal,
+            Weight: bold ? FontWeight.Bold : FontWeight.Normal
+        );
 
-        return new FontResolverInfo(stylizedFontName);
+        var font = FontResolver.Resolve(familyName, fontAttributes, ResolveStrategy);
+
+        if (font is not null)
+        {
+            var faceName = CreateFontFace(font);
+
+            if (!_fontCache.ContainsKey(faceName))
+            {
+                _fontCache[faceName] = font;
+            }
+
+            return new FontResolverInfo(faceName);
+        }
+
+        // Return fallback if no matching font is found
+        var fontFace = CreateFontFace(
+            new FontMetadata { PreferredFamily = FallbackFont, Attributes = fontAttributes }
+        );
+
+        return new FontResolverInfo(fontFace);
     }
 
     public byte[]? GetFont(string faceName)
     {
-        if (FontPathCache.TryGetValue(faceName, out var fontPath))
+        if (_fontCache.TryGetValue(faceName, out var font))
         {
-            if (File.Exists(fontPath))
+            if (File.Exists(font.FilePath))
             {
-                return File.ReadAllBytes(fontPath);
+                return File.ReadAllBytes(font.FilePath);
             }
         }
 
@@ -49,16 +57,17 @@ public class FontResolverPdfSharp : IFontResolver
 
         // Try to load embedded fallback font
         var assembly = Assembly.GetExecutingAssembly();
-        
-        var resourceName = assembly.GetManifestResourceNames()
+
+        var resourceName = assembly
+            .GetManifestResourceNames()
             .FirstOrDefault(r => r.EndsWith($"{faceName}.ttf", StringComparison.OrdinalIgnoreCase));
-        if (resourceName == null)
+        if (resourceName is null)
         {
             return null;
         }
 
         using var stream = assembly.GetManifestResourceStream(resourceName);
-        if (stream == null)
+        if (stream is null)
         {
             return null;
         }
@@ -68,13 +77,61 @@ public class FontResolverPdfSharp : IFontResolver
         return memoryStream.ToArray();
     }
 
-    public static void Register()
-    {
-        GlobalFontSettings.FontResolver = new FontResolverPdfSharp();
-    }
-
-    public static void RegisterCustomFontDirectory(string fontDirectory)
+    public void RegisterCustomFontDirectory(string fontDirectory)
     {
         FontResolver.RegisterCustomFontDirectory(fontDirectory);
+        _fontCache.Clear();
+    }
+
+    public void ClearCache()
+    {
+        FontResolver.ClearCache();
+        _fontCache.Clear();
+    }
+
+    public static FontResolverPdfSharp Register()
+    {
+        var fontResolver = new FontResolverPdfSharp();
+        GlobalFontSettings.FontResolver = fontResolver;
+        return fontResolver;
+    }
+
+    private static string CreateFontFace(FontMetadata font)
+    {
+        var faceName = new StringBuilder();
+
+        if (!string.IsNullOrEmpty(font.PreferredFamily))
+        {
+            faceName.Append(font.PreferredFamily);
+
+            if (!string.IsNullOrEmpty(font.PreferredSubfamily))
+            {
+                faceName.Append($" {font.PreferredSubfamily}");
+            }
+        }
+        else if (!string.IsNullOrEmpty(font.Family))
+        {
+            faceName.Append(font.Family);
+        }
+
+        if (font.Attributes.Weight == FontWeight.Bold)
+        {
+            faceName.Append(" Bold");
+        }
+
+        if (font.Attributes.Style == FontStyle.Italic)
+        {
+            faceName.Append(" Italic");
+        }
+
+        if (
+            font.Attributes.Weight == FontWeight.Normal
+            && font.Attributes.Style == FontStyle.Normal
+        )
+        {
+            faceName.Append(" Regular");
+        }
+
+        return faceName.ToString();
     }
 }

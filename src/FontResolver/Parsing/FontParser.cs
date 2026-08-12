@@ -9,7 +9,6 @@ internal static class FontParser
         try
         {
             using var fs = new FileStream(fontFilePath, FileMode.Open, FileAccess.Read);
-
             if (fs.Length > int.MaxValue)
             {
                 return null;
@@ -25,7 +24,7 @@ internal static class FontParser
                 var metadata = ParseFontMetadata(bytes);
                 if (metadata is not null)
                 {
-                    metadata.FontFilePath = fontFilePath;
+                    metadata.FilePath = fontFilePath;
                 }
                 return metadata;
             }
@@ -46,9 +45,13 @@ internal static class FontParser
         var scalarType = BinaryParser.ReadUint32BigEndian(bytes, 0);
 
         // Verify it's a valid TTF/OTF file
-        if (scalarType != 0x00010000 && // TrueType version 1.0
-            scalarType != 0x74727565 && // "true" - TrueType
-            scalarType != 0x4F54544F) // "OTTO" - OpenType with CFF outline
+        if (
+            scalarType != 0x00010000
+            && // TrueType version 1.0
+            scalarType != 0x74727565
+            && // "true" - TrueType
+            scalarType != 0x4F54544F
+        ) // "OTTO" - OpenType with CFF outline
         {
             return null;
         }
@@ -96,10 +99,14 @@ internal static class FontParser
         }
 
         // Return metadata if we at least have a family name
-        return !string.IsNullOrEmpty(metadata.FamilyName) ? metadata : null;
+        return !string.IsNullOrEmpty(metadata.Family) ? metadata : null;
     }
 
-    private static void ParseNameTable(Span<byte> bytes, long nameTableOffset, FontMetadata metadata)
+    private static void ParseNameTable(
+        Span<byte> bytes,
+        long nameTableOffset,
+        FontMetadata metadata
+    )
     {
         var nameTablePos = (int)nameTableOffset;
         var count = BinaryParser.ReadUint16BigEndian(bytes, nameTablePos + 2);
@@ -122,30 +129,30 @@ internal static class FontParser
             // Filter for English language entries:
             // Platform 3 (Windows): languageID 0x0409 (1033) = US English
             // Platform 1 (Macintosh): languageID 0 = English
-            var isEnglish = (platformId == 3 && languageId == 0x0409) ||
-                            (platformId == 1 && languageId == 0);
+            var isEnglish =
+                (platformId == 3 && languageId == 0x0409) || (platformId == 1 && languageId == 0);
 
-            if (platformId is not (3 or 1) || !IsRelevantNameId(nameId))
+            if ((platformId != 3 && platformId != 1) || !IsRelevantNameId(nameId))
             {
                 continue;
             }
-            
+
             var stringPos = (int)nameTableOffset + stringDataOffset + offset;
 
             if (stringPos + length > bytes.Length)
             {
                 continue;
             }
-            
+
             var nameBytes = bytes.Slice(stringPos, length);
 
             var decodedString = DecodeNameTableString(nameBytes, platformId, encodingId);
 
-            if (string.IsNullOrEmpty(decodedString) || decodedString == null)
+            if (decodedString is null)
             {
                 continue;
             }
-            
+
             // If English, set the value and mark as having English
             if (isEnglish)
             {
@@ -164,7 +171,12 @@ internal static class FontParser
 
     private static bool IsRelevantNameId(ushort nameId)
     {
-        return nameId is 1 or 2 or 4 or 6 or 16 or 17;
+        return nameId is 1
+            || nameId is 2
+            || nameId is 4
+            || nameId is 6
+            || nameId is 16
+            || nameId is 17;
     }
 
     private static bool SetMetadataValue(FontMetadata metadata, ushort nameId, string value)
@@ -172,14 +184,14 @@ internal static class FontParser
         switch (nameId)
         {
             case 1: // Legacy Family name
-                if (metadata.FamilyName == null)
+                if (string.IsNullOrEmpty(metadata.Family))
                 {
-                    metadata.FamilyName = value;
+                    metadata.Family = value;
                     return true;
                 }
                 return false;
             case 2: // Legacy Subfamily
-                if (metadata.Subfamily == null)
+                if (string.IsNullOrEmpty(metadata.Subfamily))
                 {
                     metadata.Subfamily = value;
                     ParseStyleFromSubfamily(metadata, value);
@@ -187,28 +199,28 @@ internal static class FontParser
                 }
                 return false;
             case 4: // Full font name
-                if (metadata.FullName == null)
+                if (string.IsNullOrEmpty(metadata.FullName))
                 {
                     metadata.FullName = value;
                     return true;
                 }
                 return false;
             case 6: // PostScript name
-                if (metadata.PostScriptName == null)
+                if (string.IsNullOrEmpty(metadata.PostScriptName))
                 {
                     metadata.PostScriptName = value;
                     return true;
                 }
                 return false;
             case 16: // Preferred Family (Typographic Family)
-                if (metadata.PreferredFamily == null)
+                if (string.IsNullOrEmpty(metadata.PreferredFamily))
                 {
                     metadata.PreferredFamily = value;
                     return true;
                 }
                 return false;
             case 17: // Preferred Subfamily (Typographic Subfamily)
-                if (metadata.PreferredSubfamily == null)
+                if (string.IsNullOrEmpty(metadata.PreferredSubfamily))
                 {
                     metadata.PreferredSubfamily = value;
                     return true;
@@ -219,13 +231,13 @@ internal static class FontParser
         }
     }
 
-    private static void ParseStyleFromSubfamily(FontMetadata metadata, string? subfamily)
+    private static void ParseStyleFromSubfamily(FontMetadata metadata, string subfamily)
     {
         if (subfamily is null)
         {
             return;
         }
-        
+
         var lower = subfamily.ToLowerInvariant();
 
         // Parse weight, width, and style
@@ -234,50 +246,118 @@ internal static class FontParser
         var style = ParseStyle(lower);
 
         // Update metadata with parsed attributes (note: FontAttributes order is Weight, Style, Width)
-        metadata.Attributes = new FontAttributes(weight, style, width);
+        metadata.Attributes = new FontAttributes
+        {
+            Weight = weight,
+            Style = style,
+            Width = width,
+        };
     }
 
     private static FontStyle ParseStyle(string lowerSubfamily)
     {
-        return lowerSubfamily switch
+        if (lowerSubfamily.Contains("oblique"))
         {
-            _ when lowerSubfamily.Contains("oblique") => FontStyle.Oblique,
-            _ when lowerSubfamily.Contains("italic") => FontStyle.Italic,
-            _ => FontStyle.Normal
-        };
+            return FontStyle.Oblique;
+        }
+
+        if (lowerSubfamily.Contains("italic"))
+        {
+            return FontStyle.Italic;
+        }
+
+        return FontStyle.Normal;
     }
 
     private static FontWeight ParseWeight(string lowerSubfamily)
     {
         // Map weight keywords to enum values
-        return lowerSubfamily switch
+        if (lowerSubfamily.Contains("thin") || lowerSubfamily.Contains("hairline"))
         {
-            _ when lowerSubfamily.Contains("thin") || lowerSubfamily.Contains("hairline") => FontWeight.Thin,
-            _ when lowerSubfamily.Contains("extralight") || lowerSubfamily.Contains("ultra light") => FontWeight.ExtraLight,
-            _ when lowerSubfamily.Contains("light") => FontWeight.Light,
-            _ when lowerSubfamily.Contains("medium") => FontWeight.Medium,
-            _ when lowerSubfamily.Contains("semibold") || lowerSubfamily.Contains("demibold") => FontWeight.SemiBold,
-            _ when lowerSubfamily.Contains("extrabold") || lowerSubfamily.Contains("ultra bold") => FontWeight.ExtraBold,
-            _ when lowerSubfamily.Contains("bold") => FontWeight.Bold,
-            _ when lowerSubfamily.Contains("black") || lowerSubfamily.Contains("heavy") => FontWeight.Black,
-            _ => FontWeight.Normal
-        };
+            return FontWeight.Thin;
+        }
+
+        if (lowerSubfamily.Contains("extralight") || lowerSubfamily.Contains("ultra light"))
+        {
+            return FontWeight.ExtraLight;
+        }
+
+        if (lowerSubfamily.Contains("light"))
+        {
+            return FontWeight.Light;
+        }
+
+        if (lowerSubfamily.Contains("medium"))
+        {
+            return FontWeight.Medium;
+        }
+
+        if (lowerSubfamily.Contains("semibold") || lowerSubfamily.Contains("demibold"))
+        {
+            return FontWeight.SemiBold;
+        }
+
+        if (lowerSubfamily.Contains("extrabold") || lowerSubfamily.Contains("ultra bold"))
+        {
+            return FontWeight.ExtraBold;
+        }
+
+        if (lowerSubfamily.Contains("bold"))
+        {
+            return FontWeight.Bold;
+        }
+
+        if (lowerSubfamily.Contains("black") || lowerSubfamily.Contains("heavy"))
+        {
+            return FontWeight.Black;
+        }
+
+        return FontWeight.Normal;
     }
 
     private static FontWidth ParseWidth(string lowerSubfamily)
     {
-        return lowerSubfamily switch
+        if (lowerSubfamily.Contains("ultracondensed") || lowerSubfamily.Contains("ultra condensed"))
         {
-            _ when lowerSubfamily.Contains("ultracondensed") || lowerSubfamily.Contains("ultra condensed") => FontWidth.UltraCondensed,
-            _ when lowerSubfamily.Contains("extracondensed") || lowerSubfamily.Contains("extra condensed") => FontWidth.ExtraCondensed,
-            _ when lowerSubfamily.Contains("condensed") => FontWidth.Condensed,
-            _ when lowerSubfamily.Contains("semicondensed") => FontWidth.SemiCondensed,
-            _ when lowerSubfamily.Contains("semiexpanded") => FontWidth.SemiExpanded,
-            _ when lowerSubfamily.Contains("extraexpanded") || lowerSubfamily.Contains("extra expanded") => FontWidth.ExtraExpanded,
-            _ when lowerSubfamily.Contains("ultraexpanded") || lowerSubfamily.Contains("ultra expanded") => FontWidth.UltraExpanded,
-            _ when lowerSubfamily.Contains("expanded") => FontWidth.Expanded,
-            _ => FontWidth.Medium
-        };
+            return FontWidth.UltraCondensed;
+        }
+
+        if (lowerSubfamily.Contains("extracondensed") || lowerSubfamily.Contains("extra condensed"))
+        {
+            return FontWidth.ExtraCondensed;
+        }
+
+        if (lowerSubfamily.Contains("condensed"))
+        {
+            return FontWidth.Condensed;
+        }
+
+        if (lowerSubfamily.Contains("semicondensed"))
+        {
+            return FontWidth.SemiCondensed;
+        }
+
+        if (lowerSubfamily.Contains("semiexpanded"))
+        {
+            return FontWidth.SemiExpanded;
+        }
+
+        if (lowerSubfamily.Contains("extraexpanded") || lowerSubfamily.Contains("extra expanded"))
+        {
+            return FontWidth.ExtraExpanded;
+        }
+
+        if (lowerSubfamily.Contains("ultraexpanded") || lowerSubfamily.Contains("ultra expanded"))
+        {
+            return FontWidth.UltraExpanded;
+        }
+
+        if (lowerSubfamily.Contains("expanded"))
+        {
+            return FontWidth.Expanded;
+        }
+
+        return FontWidth.Medium;
     }
 
     private static bool ParseOs2Table(Span<byte> bytes, uint? os2TableOffset, FontMetadata metadata)
@@ -286,9 +366,9 @@ internal static class FontParser
         {
             return false;
         }
-        
+
         var offset = (int)os2TableOffset.Value;
-        
+
         try
         {
             // OS/2 table structure (v0+):
@@ -296,7 +376,7 @@ internal static class FontParser
             // Offset 6: usWidthClass (USHORT) - font width (1-9)
             // Offset 8: fsType (USHORT) - embedding permissions
             // Offset 62: fsSelection (USHORT) - contains style bits
-            
+
             // Check if we have enough bytes for OS/2 table
             if (offset + 64 > bytes.Length)
             {
@@ -306,7 +386,7 @@ internal static class FontParser
             // Read usWeightClass (offset 4 in OS/2)
             var usWeightClass = BinaryParser.ReadUint16BigEndian(bytes, offset + 4);
             var weight = FontWeight.Normal;
-            if (usWeightClass is >= 100 and <= 900)
+            if (usWeightClass >= 100 && usWeightClass <= 900)
             {
                 weight = (FontWeight)usWeightClass;
             }
@@ -321,15 +401,21 @@ internal static class FontParser
 
             // Read fsSelection for style bits (offset 62 in OS/2)
             var fsSelection = BinaryParser.ReadUint16BigEndian(bytes, offset + 62);
-            
+
             // Bit 9: Oblique, Bit 6: Regular, Bit 0: Italic
-            var style = ((fsSelection & 0x0200) != 0) ? FontStyle.Oblique :
-                              ((fsSelection & 0x0001) != 0) ? FontStyle.Italic :
-                              FontStyle.Normal;
+            var style =
+                ((fsSelection & 0x0200) != 0) ? FontStyle.Oblique
+                : ((fsSelection & 0x0001) != 0) ? FontStyle.Italic
+                : FontStyle.Normal;
 
             // Update attributes with extracted OS/2 data (note: FontAttributes order is Weight, Style, Width)
-            metadata.Attributes = new FontAttributes(weight, style, width);
-            return true;    
+            metadata.Attributes = new FontAttributes
+            {
+                Weight = weight,
+                Style = style,
+                Width = width,
+            };
+            return true;
         }
         catch
         {
@@ -340,47 +426,64 @@ internal static class FontParser
 
     private static FontWidth WidthClassToEnum(int widthClass)
     {
-        return widthClass switch
+        switch (widthClass)
         {
-            1 => FontWidth.UltraCondensed,
-            2 => FontWidth.ExtraCondensed,
-            3 => FontWidth.Condensed,
-            4 => FontWidth.SemiCondensed,
-            5 => FontWidth.Medium,
-            6 => FontWidth.SemiExpanded,
-            7 => FontWidth.Expanded,
-            8 => FontWidth.ExtraExpanded,
-            9 => FontWidth.UltraExpanded,
-            _ => FontWidth.Medium
-        };
+            case 1:
+                return FontWidth.UltraCondensed;
+            case 2:
+                return FontWidth.ExtraCondensed;
+            case 3:
+                return FontWidth.Condensed;
+            case 4:
+                return FontWidth.SemiCondensed;
+            case 5:
+                return FontWidth.Medium;
+            case 6:
+                return FontWidth.SemiExpanded;
+            case 7:
+                return FontWidth.Expanded;
+            case 8:
+                return FontWidth.ExtraExpanded;
+            case 9:
+                return FontWidth.UltraExpanded;
+            default:
+                return FontWidth.Medium;
+        }
     }
 
-    private static string? DecodeNameTableString(Span<byte> data, ushort platformId, ushort encodingId)
+    private static string? DecodeNameTableString(
+        Span<byte> data,
+        ushort platformId,
+        ushort encodingId
+    )
     {
         try
         {
-            return platformId switch
+            // Windows platform
+            if (platformId == 3)
             {
-                // Windows platform
-                3 => encodingId switch
+                if (encodingId == 1)
                 {
-                    1 => BinaryParser.ReadUtf16StringBigEndian(data),
-                    _ => null
-                },
-                // Macintosh platform
-                1 => encodingId switch
+                    return BinaryParser.ReadUtf16StringBigEndian(data);
+                }
+
+                return null;
+            }
+
+            // Macintosh platform
+            if (platformId == 1)
+            {
+                if (encodingId == 0)
                 {
-                    0 => BinaryParser.ReadAsciiString(data).TrimEnd('\0'),
-                    _ => null
-                },
-                _ => null
-            };
+                    return BinaryParser.ReadAsciiString(data).TrimEnd('\0');
+                }
+            }
+
+            return null;
         }
         catch
         {
             return null;
         }
     }
-
-
 }

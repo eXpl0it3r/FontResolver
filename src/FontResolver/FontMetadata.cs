@@ -2,16 +2,16 @@ namespace FontResolution;
 
 public class FontMetadata
 {
-    public string? FontFilePath { get; set; }
-    
-    public string? FamilyName { get; set; }
-    public string? Subfamily { get; set; }
-    
-    public string? FullName { get; set; }
-    public string? PostScriptName { get; set; }
-    
-    public string? PreferredFamily { get; set; }
-    public string? PreferredSubfamily { get; set; }
-    
-    public FontAttributes? Attributes { get; set; }
+    public string FilePath { get; set; } = string.Empty;
+
+    public string Family { get; set; } = string.Empty;
+    public string Subfamily { get; set; } = string.Empty;
+
+    public string PreferredFamily { get; set; } = string.Empty;
+    public string PreferredSubfamily { get; set; } = string.Empty;
+
+    public string FullName { get; set; } = string.Empty;
+    public string PostScriptName { get; set; } = string.Empty;
+
+    public FontAttributes Attributes { get; set; } = new();
 }

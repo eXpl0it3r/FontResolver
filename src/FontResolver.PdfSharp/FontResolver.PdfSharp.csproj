@@ -1,5 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>12</LangVersion>
@@ -24,10 +23,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Tuffy.ttf" />
-    <EmbeddedResource Include="Tuffy Bold.ttf" />
-    <EmbeddedResource Include="Tuffy Bold Italic.ttf" />
-    <EmbeddedResource Include="Tuffy Italic.ttf" />
+    <EmbeddedResource Include="Fallback\Tuffy Bold Italic.ttf" />
+    <EmbeddedResource Include="Fallback\Tuffy Bold.ttf" />
+    <EmbeddedResource Include="Fallback\Tuffy Italic.ttf" />
+    <EmbeddedResource Include="Fallback\Tuffy Regular.ttf" />
   </ItemGroup>
 
   <ItemGroup>
@@ -44,5 +43,4 @@
   <ItemGroup>
     <ProjectReference Include="..\FontResolver\FontResolver.csproj" />
   </ItemGroup>
-
 </Project>

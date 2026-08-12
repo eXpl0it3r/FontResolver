@@ -11,7 +11,7 @@ internal static class BinaryParser
         {
             return 0;
         }
-        
+
         return (ushort)((data[offset] << 8) | data[offset + 1]);
     }
 
@@ -21,14 +21,16 @@ internal static class BinaryParser
         {
             return 0;
         }
-        
-        return ((uint)data[offset] << 24) | ((uint)data[offset + 1] << 16) |
-               ((uint)data[offset + 2] << 8) | data[offset + 3];
+
+        return ((uint)data[offset] << 24)
+            | ((uint)data[offset + 1] << 16)
+            | ((uint)data[offset + 2] << 8)
+            | data[offset + 3];
     }
 
     public static string ReadAsciiString(Span<byte> data, int offset, int length)
     {
-        return Encoding.ASCII.GetString(data.Slice(offset, length).ToArray());
+        return Encoding.ASCII.GetString([.. data.Slice(offset, length)]);
     }
 
     public static string ReadAsciiString(Span<byte> data)
@@ -43,16 +45,16 @@ internal static class BinaryParser
         try
         {
             var index = 0;
-            
+
             for (var i = 0; i < data.Length - 1; i += 2)
             {
                 var c = (char)((data[i] << 8) | data[i + 1]);
-                
+
                 if (c == '\0')
                 {
                     continue;
                 }
-                
+
                 chars[index] = c;
                 ++index;
             }
