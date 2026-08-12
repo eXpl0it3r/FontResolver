@@ -1,15 +1,16 @@
 using System.Diagnostics;
-using FontResolution.Parsing;
 
-namespace FontResolution.Discovery;
+namespace FontResolution.FileResolution;
 
-internal static class LinuxFontDiscovery
+internal static class LinuxFontFileResolver
 {
-    public static void DiscoverFonts(FontCache cache)
+    public static List<FontFile> ResolveFiles()
     {
+        var fontInfos = new List<FontFile>();
+
         if (!IsFontConfigAvailable())
         {
-            return;
+            return fontInfos;
         }
 
         try
@@ -21,13 +22,13 @@ internal static class LinuxFontDiscovery
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
-                CreateNoWindow = true
+                CreateNoWindow = true,
             };
 
             using var process = Process.Start(startInfo);
-            if (process == null)
+            if (process is null)
             {
-                return;
+                return fontInfos;
             }
 
             var output = process.StandardOutput.ReadToEnd();
@@ -35,20 +36,26 @@ internal static class LinuxFontDiscovery
 
             if (process.ExitCode != 0 || string.IsNullOrWhiteSpace(output))
             {
-                return;
+                return fontInfos;
             }
 
-            // Parse fc-list output: "path: family-list"
             var lines = output.Split(['\n'], StringSplitOptions.RemoveEmptyEntries);
             foreach (var line in lines)
             {
-                DiscoverFont(cache, line);
+                var fontFamilies = ResolveFile(line);
+
+                if (fontFamilies.Count > 0)
+                {
+                    fontInfos.AddRange(fontFamilies);
+                }
             }
         }
         catch
         {
             // Silently continue on errors
         }
+
+        return fontInfos;
     }
 
     private static bool IsFontConfigAvailable()
@@ -62,11 +69,11 @@ internal static class LinuxFontDiscovery
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
-                CreateNoWindow = true
+                CreateNoWindow = true,
             };
 
             using var process = Process.Start(startInfo);
-            if (process == null)
+            if (process is null)
             {
                 return false;
             }
@@ -80,57 +87,38 @@ internal static class LinuxFontDiscovery
         }
     }
 
-    private static void DiscoverFont(FontCache cache, string line)
+    private static List<FontFile> ResolveFile(string line)
     {
+        var fonts = new List<FontFile>();
+
+        // Parse fc-list output: "path: family1,family2:style=style"
         var parts = line.Split([':'], 2, StringSplitOptions.None);
         if (parts.Length < 2)
         {
-            return;
+            return fonts;
         }
 
-        var fontPath = parts[0].Trim();
+        var fontFilePath = parts[0].Trim();
         var families = parts[1].Trim().Split(',');
 
-        if (!File.Exists(fontPath) || 
-            !FontDiscoveryService.SupportedFontExtensions.Any(e => fontPath.EndsWith(e, StringComparison.InvariantCultureIgnoreCase)))
+        if (
+            !File.Exists(fontFilePath)
+            || !FontFileResolver.SupportedFontExtensions.Any(e =>
+                fontFilePath.EndsWith(e, StringComparison.InvariantCultureIgnoreCase)
+            )
+        )
         {
-            return;
+            return fonts;
         }
 
-        // Cache each family name
         foreach (var family in families)
         {
             var familyName = family.Trim();
-            if (!string.IsNullOrEmpty(familyName))
+            if (!string.IsNullOrEmpty(familyName) && File.Exists(fontFilePath))
             {
-                CacheFontIfValid(cache, familyName, fontPath);
+                fonts.Add(new FontFile(familyName, fontFilePath));
             }
         }
-    }
-
-    private static void CacheFontIfValid(FontCache cache, string fontName, string fontFile)
-    {
-        // Check if already cached with a different path
-        var cached = cache.GetFont(fontName);
-        if (cached != null)
-        {
-            return;
-        }
-
-        if (!File.Exists(fontFile))
-        {
-            return;
-        }
-
-        try
-        {
-            // Try to extract metadata
-            var metadata = FontParser.ExtractFontMetadata(fontFile);
-            cache.SetFont(fontName, fontFile, metadata);
-        }
-        catch
-        {
-            // Silently skip if we can't parse the font
-        }
+        return fonts;
     }
 }

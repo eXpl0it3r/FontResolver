@@ -1,8 +1,5 @@
-﻿using System.Runtime.InteropServices;
-using ConsoleAppFramework;
+﻿using ConsoleAppFramework;
 using FontResolution;
-using FontResolution.Discovery;
-using FontResolution.Parsing;
 
 var app = ConsoleApp.Create();
 app.Add<FontResolverCli>();
@@ -20,26 +17,50 @@ public class FontResolverCli
 
         var font = FontResolver.Resolve(fontName, new FontAttributes());
 
-        if (font is null)
+        if (font?.FilePath is null)
         {
             Console.WriteLine($"Could not resolve font '{fontName}'");
             return;
         }
-        
-        Console.WriteLine(font);
+
+        Console.WriteLine(font.FilePath);
     }
-    
-    [Command("list")]
+
+    [Command("files")]
+    public void ListFontFiles()
+    {
+        var fontFiles = FontResolver.ResolveAll().Select(f => f.FilePath).Distinct().ToList();
+
+        if (fontFiles.Count == 0)
+        {
+            Console.WriteLine("No font files found");
+            return;
+        }
+
+        foreach (var fontFile in fontFiles)
+        {
+            Console.WriteLine(fontFile);
+        }
+    }
+
+    [Command("families")]
     public void ListFontFamilies()
     {
-        var fontFamilies = FontResolver.DiscoverFontFamilies();
+        var fontFamilies = FontResolver
+            .ResolveAll()
+            .Select(f => f.Family)
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Select(name => name.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
 
         if (fontFamilies.Count == 0)
         {
             Console.WriteLine("No font families found");
             return;
         }
-        
+
         foreach (var fontFamily in fontFamilies)
         {
             Console.WriteLine(fontFamily);
@@ -49,81 +70,31 @@ public class FontResolverCli
     [Command("all")]
     public void ResolveAll()
     {
-        var fontFamilies = FontResolver.DiscoverFontFamilies();
+        var fonts = FontResolver.ResolveAll();
 
-        if (fontFamilies.Count == 0)
+        if (fonts.Count == 0)
         {
-            Console.WriteLine("No font families found");
+            Console.WriteLine("No fonts found");
             return;
         }
 
-        foreach (var fontFamily in fontFamilies)
+        foreach (var font in fonts)
         {
-            var font = FontResolver.Resolve(fontFamily, new FontAttributes());
+            Console.WriteLine($"Found {font.FilePath}");
 
-            if (font is null)
-            {
-                Console.WriteLine($"Could not resolve font '{fontFamily}'");
-                continue;
-            }
+            Console.WriteLine($"\tFamily: {font.Family}");
+            Console.WriteLine($"\tSubfamily: {font.Subfamily}");
 
-            var fontMetadata = FontParser.ExtractFontMetadata(font);
-            var fontFamilyName = fontMetadata?.FamilyName ?? "Unknown";
-            
-            Console.WriteLine($"Found {fontFamily} ({fontFamilyName}) at {font}");
-        }
-    }
+            Console.WriteLine($"\tPreferredFamily: {font.PreferredFamily}");
+            Console.WriteLine($"\tPreferredSubfamily: {font.PreferredSubfamily}");
 
-    [Command("ls")]
-    public void ListDirectories()
-    {
-        var fontDirectories = new List<string>();
+            Console.WriteLine($"\tFullName: {font.FullName}");
+            Console.WriteLine($"\tPostScriptName: {font.PostScriptName}");
 
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            fontDirectories.Add(Environment.GetFolderPath(Environment.SpecialFolder.Fonts));
-            fontDirectories.Add(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "AppData/Local/Microsoft/Windows/Fonts"));
-        }
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-        {
-            fontDirectories.Add("/System/Library/Fonts");
-            fontDirectories.Add("/Library/Fonts");
-            fontDirectories.Add(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Library/Fonts"));
-        }
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-        {
-            fontDirectories.Add("/usr/share/fonts");
-            fontDirectories.Add("/usr/local/share/fonts");
-            fontDirectories.Add(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".fonts"));
-            fontDirectories.Add(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".local/share/fonts"));
-        }
-
-        foreach (var directory in fontDirectories.Where(Directory.Exists))
-        {
-            var fontFiles = FontDiscoveryService.SupportedFontExtensions.SelectMany(e => Directory.GetFiles(directory, $"*{e}", SearchOption.AllDirectories));
-
-            foreach (var fontFile in fontFiles)
-            {
-                var fontMetadata = FontParser.ExtractFontMetadata(fontFile);
-
-                if (fontMetadata is null)
-                {
-                    Console.WriteLine($"Could not extract metadata for font file '{fontFile}'");
-                    continue;
-                }
-                
-                Console.WriteLine($"Found {fontFile}");
-                Console.WriteLine($"\tFamilyName: {fontMetadata.FamilyName}");
-                Console.WriteLine($"\tSubfamily: {fontMetadata.Subfamily}");
-                Console.WriteLine($"\tPreferredFamily: {fontMetadata.PreferredFamily}");
-                Console.WriteLine($"\tPreferredSubfamily: {fontMetadata.PreferredSubfamily}");
-                Console.WriteLine($"\tFullName: {fontMetadata.FullName}");
-                Console.WriteLine($"\tPostScriptName: {fontMetadata.PostScriptName}");
-                Console.WriteLine($"\tWeight: {fontMetadata.Attributes?.Weight}");
-                Console.WriteLine($"\tStyle: {fontMetadata.Attributes?.Style}");
-                Console.WriteLine($"\tWidth: {fontMetadata.Attributes?.Width}");
-                Console.WriteLine();
-            }
+            Console.WriteLine($"\tWeight: {font.Attributes.Weight}");
+            Console.WriteLine($"\tStyle: {font.Attributes.Style}");
+            Console.WriteLine($"\tWidth: {font.Attributes.Width}");
+            Console.WriteLine();
         }
     }
 }
