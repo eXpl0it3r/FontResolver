@@ -10,6 +10,7 @@ public class FontResolverPdfSharp : IFontResolver
 
     public static string FallbackFont => "Tuffy";
     public FontResolveStrategy ResolveStrategy { get; set; } = FontResolveStrategy.Strict;
+    public StringComparison StringComparison { get; set; } = StringComparison.Ordinal;
 
     public FontResolverInfo ResolveTypeface(string familyName, bool bold, bool italic)
     {
@@ -18,7 +19,12 @@ public class FontResolverPdfSharp : IFontResolver
             Weight: bold ? FontWeight.Bold : FontWeight.Normal
         );
 
-        var font = FontResolver.Resolve(familyName, fontAttributes, ResolveStrategy);
+        var font = FontResolver.Resolve(
+            familyName,
+            fontAttributes,
+            ResolveStrategy,
+            StringComparison
+        );
 
         if (font is not null)
         {

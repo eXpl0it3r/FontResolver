@@ -10,20 +10,28 @@ namespace FontResolution.PdfSharp.Tests;
 [TestClass]
 public sealed class FontResolverPdfSharpTests
 {
+    [TestCleanup]
+    public void Cleanup()
+    {
+        FontResolver.ClearCache();
+    }
+
     [TestMethod]
     public void Register_GlobalRegisterUnset_GlobalRegisterIsSet()
     {
         // Arrange & Act
-        FontResolverPdfSharp.Register();
+        var fontResolverPdfSharp = FontResolverPdfSharp.Register();
 
         // Assert
-        Assert.IsNotNull(
-            GlobalFontSettings.FontResolver,
-            "Global font resolver should be set after registration."
-        );
+        Assert.IsNotNull(fontResolverPdfSharp, "Font resolver is returned after registration.");
         Assert.IsInstanceOfType<FontResolverPdfSharp>(
             GlobalFontSettings.FontResolver,
             "Global font resolver should have FontResolverPdfSharp type registered."
+        );
+        Assert.AreEqual(
+            GlobalFontSettings.FontResolver,
+            fontResolverPdfSharp,
+            "Global font resolver is set after registration."
         );
     }
 
@@ -206,13 +214,60 @@ public sealed class FontResolverPdfSharpTests
     {
         // Arrange
         var fontResolver = new FontResolverPdfSharp();
+        var testDirectory = AppContext.BaseDirectory;
 
         // Act
-        fontResolver.RegisterCustomFontDirectory(Directory.GetCurrentDirectory());
+        fontResolver.RegisterCustomFontDirectory(testDirectory);
         var fontPath = fontResolver.ResolveTypeface("Font Stub", false, false);
 
         // Assert
         Assert.IsNotNull(fontPath, "Font path should not be null for a font");
         Assert.AreEqual("Font Stub Regular", fontPath.FaceName, "Font file is found");
+    }
+
+    [TestMethod]
+    public void ClearCache_CacheCleared_FontIsResolvedAgain()
+    {
+        // Arrange
+        var fontResolver = new FontResolverPdfSharp();
+        var fontName = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "DejaVu Sans" : "Arial";
+
+        // Act
+        var fontInfoBeforeClear = fontResolver.ResolveTypeface(fontName, false, false);
+        fontResolver.ClearCache();
+        var fontInfoAfterClear = fontResolver.ResolveTypeface(fontName, false, false);
+
+        // Assert
+        Assert.IsNotNull(
+            fontInfoBeforeClear,
+            "Font info should not be null before clearing cache."
+        );
+        Assert.IsNotNull(fontInfoAfterClear, "Font info should not be null after clearing cache.");
+        Assert.AreEqual(
+            fontInfoBeforeClear.FaceName,
+            fontInfoAfterClear.FaceName,
+            "Font face name should remain the same after clearing cache."
+        );
+    }
+
+    [TestMethod]
+    public void ClearCache_GetFont_NullIsReturned()
+    {
+        // Arrange
+        var fontResolver = new FontResolverPdfSharp();
+        var fontName = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "DejaVu Sans" : "Arial";
+        var fontInfoBeforeClear = fontResolver.ResolveTypeface(fontName, false, false);
+        var fontDataBeforeClear = fontResolver.GetFont(fontInfoBeforeClear.FaceName);
+
+        // Act
+        fontResolver.ClearCache();
+        var fontDataAfterClear = fontResolver.GetFont(fontInfoBeforeClear.FaceName);
+
+        // Assert
+        Assert.IsNotNull(
+            fontDataBeforeClear,
+            "Font data should not be null before clearing cache."
+        );
+        Assert.IsNull(fontDataAfterClear, "Font data should be null after clearing cache.");
     }
 }

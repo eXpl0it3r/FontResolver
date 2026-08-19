@@ -5,6 +5,12 @@ namespace FontResolution.Tests;
 [TestClass]
 public sealed class FontResolverTests
 {
+    [TestCleanup]
+    public void Cleanup()
+    {
+        FontResolver.ClearCache();
+    }
+
     [TestMethod]
     public void Resolve_FontExists_FontPathIsReturned()
     {
@@ -40,9 +46,10 @@ public sealed class FontResolverTests
     {
         // Arrange
         var style = new FontAttributes { Weight = FontWeight.Normal, Style = FontStyle.Normal };
+        var testDirectory = AppContext.BaseDirectory;
 
         // Act
-        FontResolver.RegisterCustomFontDirectory(Directory.GetCurrentDirectory());
+        FontResolver.RegisterCustomFontDirectory(testDirectory);
         var font = FontResolver.Resolve("Font Stub", style);
 
         // Assert
@@ -95,5 +102,28 @@ public sealed class FontResolverTests
                 $"System font family '{discoveredFonts[0]}' should have resolved."
             );
         }
+    }
+
+    [TestMethod]
+    [DoNotParallelize]
+    public void ClearCache_FontsAreCleared_FontIsResolvedAgain()
+    {
+        // Arrange
+        var fontName = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "DejaVu Sans" : "Arial";
+        var style = new FontAttributes { Weight = FontWeight.Normal, Style = FontStyle.Normal };
+
+        // Act
+        var fontBeforeClear = FontResolver.Resolve(fontName, style);
+        FontResolver.ClearCache();
+        var fontAfterClear = FontResolver.Resolve(fontName, style);
+
+        // Assert
+        Assert.IsNotNull(fontBeforeClear, "Font should not be null before clearing cache.");
+        Assert.IsNotNull(fontAfterClear, "Font should not be null after clearing cache.");
+        Assert.AreEqual(
+            fontBeforeClear.FilePath,
+            fontAfterClear.FilePath,
+            "Font file paths should be the same before and after clearing cache."
+        );
     }
 }
