@@ -6,6 +6,7 @@ namespace FontResolution;
 public static class FontResolver
 {
     private static readonly object InitializationLock = new();
+    private static readonly object CacheLock = new();
 
     private static FontFileResolver? _fontFileResolver;
     private static List<FontMetadata> _fontMetadataCache = [];
@@ -18,7 +19,8 @@ public static class FontResolver
     )
     {
         EnsureInitialized();
-        EnsureFontMetadataCache();
+
+        var cache = GetFontMetadataCache();
 
         return FontMatcher.Resolve(
             _fontMetadataCache,
@@ -32,21 +34,21 @@ public static class FontResolver
     public static IReadOnlyList<FontMetadata> ResolveAll()
     {
         EnsureInitialized();
-        EnsureFontMetadataCache();
 
-        return _fontMetadataCache;
+        return GetFontMetadataCache();
     }
 
     public static void RegisterCustomFontDirectory(string fontDirectory)
     {
         EnsureInitialized();
+
         _fontFileResolver!.RegisterCustomFontDirectory(fontDirectory);
         ClearCache();
     }
 
     public static void ClearCache()
     {
-        _fontMetadataCache.Clear();
+        Interlocked.Exchange(ref _fontMetadataCache, []);
     }
 
     private static void EnsureInitialized()
@@ -67,21 +69,31 @@ public static class FontResolver
         }
     }
 
-    private static void EnsureFontMetadataCache()
+    private static List<FontMetadata> GetFontMetadataCache()
     {
-        if (_fontMetadataCache.Count != 0)
+        var cache = Volatile.Read(ref _fontMetadataCache);
+
+        if (cache.Count != 0)
         {
-            return;
+            return cache;
         }
 
-        var fontInfos = _fontFileResolver!.ResolveFiles();
+        lock (CacheLock)
+        {
+            cache = _fontMetadataCache;
 
-        _fontMetadataCache =
-        [
-            .. fontInfos
+            if (cache.Count != 0)
+            {
+                return cache;
+            }
+
+            var fontInfos = _fontFileResolver!.ResolveFiles();
+
+            var newCache = fontInfos
                 .Select(fontInfo =>
                 {
                     var metadata = FontParser.ExtractFontMetadata(fontInfo.FilePath);
+
                     if (metadata is not null)
                     {
                         return metadata;
@@ -100,7 +112,12 @@ public static class FontResolver
                     };
                 })
                 .GroupBy(metadata => metadata.FilePath, StringComparer.OrdinalIgnoreCase)
-                .Select(group => group.First()),
-        ];
+                .Select(group => group.First())
+                .ToList();
+
+            Volatile.Write(ref _fontMetadataCache, newCache);
+
+            return newCache;
+        }
     }
 }

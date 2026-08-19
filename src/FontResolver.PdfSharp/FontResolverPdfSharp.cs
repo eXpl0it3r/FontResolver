@@ -6,7 +6,7 @@ namespace FontResolution.PdfSharp;
 
 public class FontResolverPdfSharp : IFontResolver
 {
-    private readonly Dictionary<string, FontMetadata> _fontCache = new();
+    private Dictionary<string, FontMetadata> _fontCache = new();
 
     public static string FallbackFont => "Tuffy";
     public FontResolveStrategy ResolveStrategy { get; set; } = FontResolveStrategy.Strict;
@@ -42,7 +42,9 @@ public class FontResolverPdfSharp : IFontResolver
 
     public byte[]? GetFont(string faceName)
     {
-        if (_fontCache.TryGetValue(faceName, out var font))
+        var cache = Volatile.Read(ref _fontCache);
+
+        if (cache.TryGetValue(faceName, out var font))
         {
             if (File.Exists(font.FilePath))
             {
@@ -86,7 +88,7 @@ public class FontResolverPdfSharp : IFontResolver
     public void ClearCache()
     {
         FontResolver.ClearCache();
-        _fontCache.Clear();
+        Interlocked.Exchange(ref _fontCache, new Dictionary<string, FontMetadata>());
     }
 
     public static FontResolverPdfSharp Register()
