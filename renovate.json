@@ -4,5 +4,12 @@
     "config:recommended"
   ],
   "dependencyDashboard": false,
-  "minimumReleaseAge": "7 days"
+  "minimumReleaseAge": "7 days",
+  "packageRules": [
+    {
+      "description": "PDFsharp switched from MIT to AGPL-3.0 with 6.5.0, stay on the last MIT release",
+      "matchPackageNames": ["PDFsharp"],
+      "enabled": false
+    }
+  ]
 }
