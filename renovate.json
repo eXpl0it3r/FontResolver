@@ -8,7 +8,7 @@
   "packageRules": [
     {
       "description": "PDFsharp switched from MIT to AGPL-3.0 with 6.5.0, stay on the last MIT release",
-      "matchPackageNames": ["PDFsharp"],
+      "matchPackageNames": ["PDFsharp", "PDFsharp-MigraDoc"],
       "enabled": false
     }
   ]
