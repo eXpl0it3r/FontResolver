@@ -10,6 +10,7 @@
 
 ### Fixed
 
+- `FontResolverPdfSharp` can be used from several threads at once
 - `Resolve()` could fall back to no match while the cache was being cleared
 - A font directory registered during a font scan could be missing from the cache
 
