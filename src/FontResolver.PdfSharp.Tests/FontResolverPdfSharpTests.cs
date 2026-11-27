@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Collections.Concurrent;
+using System.Runtime.InteropServices;
 using System.Text;
 using MigraDoc;
 using MigraDoc.DocumentObjectModel;
@@ -269,5 +270,89 @@ public sealed class FontResolverPdfSharpTests
             "Font data should not be null before clearing cache."
         );
         Assert.IsNull(fontDataAfterClear, "Font data should be null after clearing cache.");
+    }
+
+    [TestMethod]
+    public void ResolveTypeface_CalledInParallel_EveryResolvedFontHasData()
+    {
+        // Arrange
+        var familyNames = FontResolver
+            .ResolveAll()
+            .Select(font =>
+                string.IsNullOrEmpty(font.PreferredFamily) ? font.Family : font.PreferredFamily
+            )
+            .Where(name => !string.IsNullOrEmpty(name))
+            .Distinct()
+            .ToList();
+        var requests = familyNames
+            .SelectMany(name =>
+                new[] { (name, false, false), (name, true, false), (name, false, true), (name, true, true) }
+            )
+            .ToList();
+
+        for (var run = 0; run < 5; run++)
+        {
+            var fontResolver = new FontResolverPdfSharp();
+            var faceNames = new ConcurrentBag<string>();
+
+            // Act
+            Parallel.ForEach(
+                requests,
+                request =>
+                {
+                    var fontInfo = fontResolver.ResolveTypeface(
+                        request.Item1,
+                        request.Item2,
+                        request.Item3
+                    );
+                    fontResolver.GetFont(fontInfo.FaceName);
+                    faceNames.Add(fontInfo.FaceName);
+                }
+            );
+
+            // Assert
+            Assert.IsNotEmpty(familyNames, "At least one system font should be found.");
+            foreach (var faceName in faceNames.Distinct())
+            {
+                Assert.IsNotNull(
+                    fontResolver.GetFont(faceName),
+                    $"Font data should not be null for {faceName}."
+                );
+            }
+        }
+    }
+
+    [TestMethod]
+    public void RegisterCustomFontDirectory_CalledWhileResolving_FontIsStillResolved()
+    {
+        // Arrange
+        var fontResolver = new FontResolverPdfSharp();
+        var fontName = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "DejaVu Sans" : "Arial";
+        var expectedFaceName = fontResolver.ResolveTypeface(fontName, false, false).FaceName;
+        var faceNames = new ConcurrentBag<string>();
+        using var resolved = new CancellationTokenSource();
+
+        // Act
+        var registering = Task.Run(() =>
+        {
+            while (!resolved.IsCancellationRequested)
+            {
+                fontResolver.RegisterCustomFontDirectory(AppContext.BaseDirectory);
+            }
+        });
+        for (var i = 0; i < 20; i++)
+        {
+            var fontInfo = fontResolver.ResolveTypeface(fontName, false, false);
+            fontResolver.GetFont(fontInfo.FaceName);
+            faceNames.Add(fontInfo.FaceName);
+        }
+        resolved.Cancel();
+        registering.Wait();
+
+        // Assert
+        Assert.IsTrue(
+            faceNames.All(faceName => faceName == expectedFaceName),
+            $"Every resolve should return {expectedFaceName}, got {string.Join(", ", faceNames.Distinct())}."
+        );
     }
 }
