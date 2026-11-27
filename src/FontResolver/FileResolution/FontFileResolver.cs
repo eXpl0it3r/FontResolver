@@ -4,6 +4,7 @@ namespace FontResolution.FileResolution;
 
 internal class FontFileResolver
 {
+    private readonly object _customFontDirectoriesLock = new();
     private readonly List<string> _customFontDirectories = [];
 
     public static string[] SupportedFontExtensions { get; } = [".ttf", ".otf"];
@@ -25,19 +26,28 @@ internal class FontFileResolver
             fontInfos = MacOsFontFileResolver.ResolveFiles();
         }
 
+        List<string> customFontDirectories;
+        lock (_customFontDirectoriesLock)
+        {
+            customFontDirectories = [.. _customFontDirectories];
+        }
+
         // Always use directory scan as fallback
-        fontInfos.AddRange(DirectoryFontFileResolver.ResolveFiles(_customFontDirectories));
+        fontInfos.AddRange(DirectoryFontFileResolver.ResolveFiles(customFontDirectories));
 
         return fontInfos;
     }
 
     public void RegisterCustomFontDirectory(string fontDirectory)
     {
-        if (_customFontDirectories.Contains(fontDirectory))
+        lock (_customFontDirectoriesLock)
         {
-            return;
-        }
+            if (_customFontDirectories.Contains(fontDirectory))
+            {
+                return;
+            }
 
-        _customFontDirectories.Add(fontDirectory);
+            _customFontDirectories.Add(fontDirectory);
+        }
     }
 }

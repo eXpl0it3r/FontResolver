@@ -59,6 +59,49 @@ public sealed class FontResolverTests
     }
 
     [TestMethod]
+    [DoNotParallelize]
+    public void RegisterCustomFontDirectory_CalledDuringAScan_DirectoryIsScanned()
+    {
+        // Registering at different points during a scan, one of them lands after the scan read the
+        // directory list and before it stored its result
+        for (var delay = 0; delay < 100; delay += 5)
+        {
+            // Arrange
+            var directory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            Directory.CreateDirectory(directory);
+            File.Copy(
+                Path.Combine(AppContext.BaseDirectory, "Font Stub.ttf"),
+                Path.Combine(directory, "Font Stub.ttf")
+            );
+
+            try
+            {
+                // Act
+                FontResolver.ClearCache();
+                var scanning = Task.Run(FontResolver.ResolveAll);
+                Thread.Sleep(delay);
+                FontResolver.RegisterCustomFontDirectory(directory);
+                scanning.Wait();
+                var fontDirectories = FontResolver
+                    .ResolveAll()
+                    .Select(font => Path.GetDirectoryName(font.FilePath))
+                    .ToList();
+
+                // Assert
+                Assert.Contains(
+                    directory,
+                    fontDirectories,
+                    $"Fonts in {directory} registered after {delay} ms should be found."
+                );
+            }
+            finally
+            {
+                Directory.Delete(directory, true);
+            }
+        }
+    }
+
+    [TestMethod]
     public void ResolveAll_FontsExists_KnownFontsAreReturned()
     {
         // Arrange
