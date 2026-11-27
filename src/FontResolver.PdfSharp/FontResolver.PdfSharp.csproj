@@ -37,7 +37,10 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
+    <!-- PDFsharp switched from MIT to AGPL-3.0 with 6.5.0, stay on the last MIT release -->
     <PackageReference Include="PDFsharp" Version="6.2.4" />
+    <!-- PDFsharp depends on 8.0.1, which has known vulnerabilities -->
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.15" />
   </ItemGroup>
 
   <ItemGroup>
