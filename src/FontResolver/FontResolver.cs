@@ -23,7 +23,7 @@ public static class FontResolver
         var cache = GetFontMetadataCache();
 
         return FontMatcher.Resolve(
-            _fontMetadataCache,
+            cache,
             fontName,
             fontAttributes,
             resolveStrategy,
@@ -48,7 +48,11 @@ public static class FontResolver
 
     public static void ClearCache()
     {
-        Interlocked.Exchange(ref _fontMetadataCache, []);
+        // Waits for a scan in progress, which would otherwise store its outdated result after the reset.
+        lock (CacheLock)
+        {
+            Volatile.Write(ref _fontMetadataCache, []);
+        }
     }
 
     private static void EnsureInitialized()
