@@ -27,6 +27,17 @@ public class FontResolverPdfSharp : IFontResolver
             StringComparison
         );
 
+        // PDFsharp's italic covers oblique faces as well, which Strict wouldn't match otherwise
+        if (font is null && italic)
+        {
+            font = FontResolver.Resolve(
+                familyName,
+                fontAttributes with { Style = FontStyle.Oblique },
+                ResolveStrategy,
+                StringComparison
+            );
+        }
+
         if (font is not null)
         {
             var faceName = CreateFontFace(font);
@@ -54,7 +65,7 @@ public class FontResolverPdfSharp : IFontResolver
             }
         }
 
-        if (!faceName.StartsWith(FallbackFont))
+        if (!faceName.StartsWith(FallbackFont, StringComparison.Ordinal))
         {
             return null;
         }
@@ -123,7 +134,8 @@ public class FontResolverPdfSharp : IFontResolver
             faceName.Append(" Bold");
         }
 
-        if (font.Attributes.Style == FontStyle.Italic)
+        // PDFsharp only knows italic, an oblique face needs a name of its own as well
+        if (font.Attributes.Style is FontStyle.Italic or FontStyle.Oblique)
         {
             faceName.Append(" Italic");
         }
