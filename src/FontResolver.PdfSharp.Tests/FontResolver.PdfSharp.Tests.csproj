@@ -18,6 +18,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\FontResolver.Tests\SyntheticFont.cs" Link="SyntheticFont.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="Font Stub.ttf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

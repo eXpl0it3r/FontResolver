@@ -123,7 +123,8 @@ public class FontResolverPdfSharp : IFontResolver
             faceName.Append(" Bold");
         }
 
-        if (font.Attributes.Style == FontStyle.Italic)
+        // PDFsharp only knows italic, an oblique face needs a name of its own as well
+        if (font.Attributes.Style is FontStyle.Italic or FontStyle.Oblique)
         {
             faceName.Append(" Italic");
         }

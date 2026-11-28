@@ -29,6 +29,7 @@ internal sealed class SyntheticFont
 {
     private readonly List<NameRecord> _names = [];
     private FontWeight? _weight;
+    private bool _oblique;
 
     public SyntheticFont WithName(
         NameId id,
@@ -63,9 +64,10 @@ internal sealed class SyntheticFont
         return this;
     }
 
-    public SyntheticFont WithOs2(FontWeight weight)
+    public SyntheticFont WithOs2(FontWeight weight, bool oblique = false)
     {
         _weight = weight;
+        _oblique = oblique;
         return this;
     }
 
@@ -74,7 +76,7 @@ internal sealed class SyntheticFont
         var tables = new List<(string Tag, byte[] Data)> { ("name", NameTable()) };
         if (_weight.HasValue)
         {
-            tables.Add(("OS/2", Os2Table(_weight.Value)));
+            tables.Add(("OS/2", Os2Table(_weight.Value, _oblique)));
         }
 
         using var stream = new MemoryStream();
@@ -138,13 +140,15 @@ internal sealed class SyntheticFont
         return stream.ToArray();
     }
 
-    private static byte[] Os2Table(FontWeight weight)
+    private static byte[] Os2Table(FontWeight weight, bool oblique)
     {
         var table = new byte[78];
         table[4] = (byte)((int)weight >> 8);
         table[5] = (byte)weight;
         // usWidthClass 5 is the normal width
         table[7] = 5;
+        // fsSelection bit 9 marks an oblique face
+        table[62] = oblique ? (byte)0x02 : (byte)0;
         return table;
     }
 

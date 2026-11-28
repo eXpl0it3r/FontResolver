@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using System.Text;
+using FontResolution.Tests;
 using MigraDoc;
 using MigraDoc.DocumentObjectModel;
 using MigraDoc.Rendering;
@@ -270,6 +271,45 @@ public sealed class FontResolverPdfSharpTests
             "Font data should not be null before clearing cache."
         );
         Assert.IsNull(fontDataAfterClear, "Font data should be null after clearing cache.");
+    }
+
+    [TestMethod]
+    public void ResolveTypeface_BoldAndBoldObliqueFaces_FaceNamesDiffer()
+    {
+        // Arrange
+        var directory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        Directory.CreateDirectory(directory);
+        var family = "Synthetic " + Guid.NewGuid().ToString("N");
+        new SyntheticFont()
+            .WithName(NameId.Family, family)
+            .WithName(NameId.Subfamily, "Bold")
+            .WithOs2(FontWeight.Bold)
+            .Write(Path.Combine(directory, "bold.ttf"));
+        new SyntheticFont()
+            .WithName(NameId.Family, family)
+            .WithName(NameId.Subfamily, "Bold Oblique")
+            .WithOs2(FontWeight.Bold, oblique: true)
+            .Write(Path.Combine(directory, "bold-oblique.ttf"));
+        var fontResolver = new FontResolverPdfSharp { ResolveStrategy = FontResolveStrategy.Closest };
+
+        try
+        {
+            // Act
+            fontResolver.RegisterCustomFontDirectory(directory);
+            var bold = fontResolver.ResolveTypeface(family, true, false);
+            var boldItalic = fontResolver.ResolveTypeface(family, true, true);
+
+            // Assert
+            Assert.AreNotEqual(
+                bold.FaceName,
+                boldItalic.FaceName,
+                "The bold and the bold oblique face should have different face names."
+            );
+        }
+        finally
+        {
+            Directory.Delete(directory, true);
+        }
     }
 
     [TestMethod]
