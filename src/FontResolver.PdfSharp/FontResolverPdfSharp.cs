@@ -54,7 +54,7 @@ public class FontResolverPdfSharp : IFontResolver
             }
         }
 
-        if (!faceName.StartsWith(FallbackFont))
+        if (!faceName.StartsWith(FallbackFont, StringComparison.Ordinal))
         {
             return null;
         }
