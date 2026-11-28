@@ -132,7 +132,7 @@ internal static class FontParser
                 : platformId == 1 && languageId == 0 ? 2
                 : 1;
 
-            if ((platformId != 3 && platformId != 1) || !IsRelevantNameId(nameId))
+            if (platformId > 3 || platformId == 2 || !IsRelevantNameId(nameId))
             {
                 continue;
             }
@@ -428,15 +428,10 @@ internal static class FontParser
     {
         try
         {
-            // Windows platform
-            if (platformId == 3)
+            // Unicode and Windows strings are UTF-16BE whatever the encoding, e.g. symbol fonts use encoding 0
+            if (platformId is 0 or 3)
             {
-                if (encodingId == 1)
-                {
-                    return BinaryParser.ReadUtf16StringBigEndian(data);
-                }
-
-                return null;
+                return BinaryParser.ReadUtf16StringBigEndian(data);
             }
 
             // Macintosh platform

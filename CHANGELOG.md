@@ -14,6 +14,7 @@
 - `Resolve()` could fall back to no match while the cache was being cleared
 - A font directory registered during a font scan could be missing from the cache
 - The Windows English names are preferred over localized ones and over the Mac ones, which are only read as ASCII
+- Names in the Windows symbol encoding and on the Unicode platform are read, fonts with only those names were skipped
 
 ## [2.0.0] - 2026-08-21
 

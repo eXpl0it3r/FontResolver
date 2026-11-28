@@ -63,5 +63,26 @@ public sealed class FontParsingTests
         Assert.AreEqual(path, font.FilePath, "The font file should be found.");
     }
 
+    [TestMethod]
+    [DataRow(NameEncoding.WindowsSymbol)]
+    [DataRow(NameEncoding.UnicodeBmp)]
+    public void Resolve_NamesInUtf16Encodings_FamilyIsResolved(NameEncoding encoding)
+    {
+        // Arrange
+        var family = UniqueFamily();
+        var path = new SyntheticFont()
+            .WithName(NameId.Family, family, encoding)
+            .WithName(NameId.Subfamily, "Regular", encoding)
+            .Write(Path.Combine(_directory, "encoding.ttf"));
+
+        // Act
+        FontResolver.RegisterCustomFontDirectory(_directory);
+        var font = FontResolver.Resolve(family, new FontAttributes());
+
+        // Assert
+        Assert.IsNotNull(font, $"The font with {encoding} names should be resolved.");
+        Assert.AreEqual(path, font.FilePath, "The font file should be found.");
+    }
+
     private static string UniqueFamily() => "Synthetic " + Guid.NewGuid().ToString("N");
 }
