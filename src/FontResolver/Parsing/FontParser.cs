@@ -207,7 +207,8 @@ internal static class FontParser
             return;
         }
 
-        var lower = subfamily.ToLowerInvariant();
+        // Spelled "Extra Bold", "Extra-Bold" or "ExtraBold" depending on the font
+        var lower = subfamily.ToLowerInvariant().Replace(" ", "").Replace("-", "");
 
         // Parse weight, width, and style
         var weight = ParseWeight(lower);
@@ -240,13 +241,12 @@ internal static class FontParser
 
     private static FontWeight ParseWeight(string lowerSubfamily)
     {
-        // Map weight keywords to enum values
         if (lowerSubfamily.Contains("thin") || lowerSubfamily.Contains("hairline"))
         {
             return FontWeight.Thin;
         }
 
-        if (lowerSubfamily.Contains("extralight") || lowerSubfamily.Contains("ultra light"))
+        if (lowerSubfamily.Contains("extralight") || lowerSubfamily.Contains("ultralight"))
         {
             return FontWeight.ExtraLight;
         }
@@ -266,7 +266,7 @@ internal static class FontParser
             return FontWeight.SemiBold;
         }
 
-        if (lowerSubfamily.Contains("extrabold") || lowerSubfamily.Contains("ultra bold"))
+        if (lowerSubfamily.Contains("extrabold") || lowerSubfamily.Contains("ultrabold"))
         {
             return FontWeight.ExtraBold;
         }
@@ -286,19 +286,15 @@ internal static class FontParser
 
     private static FontWidth ParseWidth(string lowerSubfamily)
     {
-        if (lowerSubfamily.Contains("ultracondensed") || lowerSubfamily.Contains("ultra condensed"))
+        // The prefixed widths contain the plain ones, so they have to be checked first
+        if (lowerSubfamily.Contains("ultracondensed"))
         {
             return FontWidth.UltraCondensed;
         }
 
-        if (lowerSubfamily.Contains("extracondensed") || lowerSubfamily.Contains("extra condensed"))
+        if (lowerSubfamily.Contains("extracondensed"))
         {
             return FontWidth.ExtraCondensed;
-        }
-
-        if (lowerSubfamily.Contains("condensed"))
-        {
-            return FontWidth.Condensed;
         }
 
         if (lowerSubfamily.Contains("semicondensed"))
@@ -306,19 +302,24 @@ internal static class FontParser
             return FontWidth.SemiCondensed;
         }
 
-        if (lowerSubfamily.Contains("semiexpanded"))
+        if (lowerSubfamily.Contains("condensed"))
         {
-            return FontWidth.SemiExpanded;
+            return FontWidth.Condensed;
         }
 
-        if (lowerSubfamily.Contains("extraexpanded") || lowerSubfamily.Contains("extra expanded"))
+        if (lowerSubfamily.Contains("ultraexpanded"))
+        {
+            return FontWidth.UltraExpanded;
+        }
+
+        if (lowerSubfamily.Contains("extraexpanded"))
         {
             return FontWidth.ExtraExpanded;
         }
 
-        if (lowerSubfamily.Contains("ultraexpanded") || lowerSubfamily.Contains("ultra expanded"))
+        if (lowerSubfamily.Contains("semiexpanded"))
         {
-            return FontWidth.UltraExpanded;
+            return FontWidth.SemiExpanded;
         }
 
         if (lowerSubfamily.Contains("expanded"))

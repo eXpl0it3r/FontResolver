@@ -84,5 +84,31 @@ public sealed class FontParsingTests
         Assert.AreEqual(path, font.FilePath, "The font file should be found.");
     }
 
+    [TestMethod]
+    [DataRow("SemiCondensed", FontWeight.Normal, FontWidth.SemiCondensed)]
+    [DataRow("SemiExpanded", FontWeight.Normal, FontWidth.SemiExpanded)]
+    [DataRow("Extra Bold", FontWeight.ExtraBold, FontWidth.Medium)]
+    [DataRow("UltraLight", FontWeight.ExtraLight, FontWidth.Medium)]
+    public void Resolve_FontWithoutOs2Table_AttributesAreTakenFromTheSubfamily(
+        string subfamily,
+        FontWeight weight,
+        FontWidth width
+    )
+    {
+        // Arrange
+        var family = UniqueFamily();
+        new SyntheticFont()
+            .WithName(NameId.Family, family)
+            .WithName(NameId.Subfamily, subfamily)
+            .Write(Path.Combine(_directory, "subfamily.ttf"));
+
+        // Act
+        FontResolver.RegisterCustomFontDirectory(_directory);
+        var font = FontResolver.Resolve(family, new FontAttributes(weight, FontStyle.Normal, width));
+
+        // Assert
+        Assert.IsNotNull(font, $"The {subfamily} face should be resolved with weight {weight} and width {width}.");
+    }
+
     private static string UniqueFamily() => "Synthetic " + Guid.NewGuid().ToString("N");
 }
