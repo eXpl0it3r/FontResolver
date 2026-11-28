@@ -49,11 +49,9 @@ internal static class DirectoryFontFileResolver
             try
             {
                 fontInfos.AddRange(
-                    FontFileResolver
-                        .SupportedFontExtensions.SelectMany(e =>
-                            Directory.GetFiles(directory, $"*{e}", SearchOption.AllDirectories)
-                        )
+                    EnumerateFontFiles(directory)
                         .Select(f => new FontFile(Path.GetFileNameWithoutExtension(f), f))
+                        .ToList()
                 );
             }
             catch
@@ -63,5 +61,47 @@ internal static class DirectoryFontFileResolver
         }
 
         return fontInfos;
+    }
+
+    private static IEnumerable<string> EnumerateFontFiles(string directory)
+    {
+        // Font files copied from Windows often have upper case extensions, and one unreadable
+        // subfolder mustn't hide the rest of the tree, so the folders are walked one by one
+        var files = new List<string>();
+        var pending = new Stack<string>();
+        pending.Push(directory);
+
+        while (pending.Count > 0)
+        {
+            var current = pending.Pop();
+
+            try
+            {
+                files.AddRange(
+                    Directory
+                        .EnumerateFiles(current)
+                        .Where(f =>
+                            FontFileResolver.SupportedFontExtensions.Any(e =>
+                                f.EndsWith(e, StringComparison.OrdinalIgnoreCase)
+                            )
+                        )
+                );
+
+                foreach (var subdirectory in Directory.EnumerateDirectories(current))
+                {
+                    // A linked folder can point back up the tree
+                    if ((File.GetAttributes(subdirectory) & FileAttributes.ReparsePoint) == 0)
+                    {
+                        pending.Push(subdirectory);
+                    }
+                }
+            }
+            catch (Exception e) when (e is UnauthorizedAccessException or IOException)
+            {
+                // Skips only this folder
+            }
+        }
+
+        return files;
     }
 }

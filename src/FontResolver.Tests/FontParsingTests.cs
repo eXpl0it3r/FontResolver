@@ -137,5 +137,24 @@ public sealed class FontParsingTests
         Assert.AreEqual(regularPath, font.FilePath, "The regular face should match normal attributes best.");
     }
 
+    [TestMethod]
+    public void Resolve_FontFileWithUpperCaseExtension_FontIsResolved()
+    {
+        // Arrange
+        var family = UniqueFamily();
+        var path = new SyntheticFont()
+            .WithName(NameId.Family, family)
+            .WithName(NameId.Subfamily, "Regular")
+            .Write(Path.Combine(_directory, "upper.TTF"));
+
+        // Act
+        FontResolver.RegisterCustomFontDirectory(_directory);
+        var font = FontResolver.Resolve(family, new FontAttributes());
+
+        // Assert
+        Assert.IsNotNull(font, "A font file with an upper case extension should be found.");
+        Assert.AreEqual(path, font.FilePath, "The font file should be found.");
+    }
+
     private static string UniqueFamily() => "Synthetic " + Guid.NewGuid().ToString("N");
 }
