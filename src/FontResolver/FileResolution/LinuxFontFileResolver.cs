@@ -99,7 +99,14 @@ internal static class LinuxFontFileResolver
         }
 
         var fontFilePath = parts[0].Trim();
-        var families = parts[1].Trim().Split(',');
+        var familyPart = parts[1];
+        var styleStart = familyPart.IndexOf(':');
+        if (styleStart >= 0)
+        {
+            familyPart = familyPart.Substring(0, styleStart);
+        }
+
+        var families = familyPart.Trim().Split(',');
 
         if (
             !File.Exists(fontFilePath)
