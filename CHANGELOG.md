@@ -13,6 +13,10 @@
 - `FontResolverPdfSharp` can be used from several threads at once
 - `Resolve()` could fall back to no match while the cache was being cleared
 - A font directory registered during a font scan could be missing from the cache
+- The Windows English names are preferred over localized ones and over the Mac ones, which are only read as ASCII
+- Names in the Windows symbol encoding and on the Unicode platform are read, fonts with only those names were skipped
+- Fonts without an OS/2 table read SemiCondensed, ExtraLight and spaced names like "Extra Bold" from the subfamily correctly
+- Font files are read completely when the file system returns them in parts
 
 ## [2.0.0] - 2026-08-21
 
