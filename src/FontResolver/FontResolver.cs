@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using FontResolution.FileResolution;
 using FontResolution.Parsing;
 
@@ -7,6 +8,13 @@ public static class FontResolver
 {
     private static readonly object InitializationLock = new();
     private static readonly object CacheLock = new();
+
+    // Linux file systems are case-sensitive, Windows and macOS ones usually aren't
+    private static readonly StringComparer PathComparer = RuntimeInformation.IsOSPlatform(
+        OSPlatform.Linux
+    )
+        ? StringComparer.Ordinal
+        : StringComparer.OrdinalIgnoreCase;
 
     private static FontFileResolver? _fontFileResolver;
     // Null until scanned, an empty list is a valid result on a system without fonts
@@ -96,7 +104,7 @@ public static class FontResolver
 
             // The platform lists and the directory scan return the same files, parse each only once
             var newCache = fontInfos
-                .GroupBy(fontInfo => fontInfo.FilePath, StringComparer.OrdinalIgnoreCase)
+                .GroupBy(fontInfo => fontInfo.FilePath, PathComparer)
                 .Select(group => group.First())
                 .Select(fontInfo =>
                 {
