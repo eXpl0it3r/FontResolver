@@ -17,6 +17,7 @@
 - Names in the Windows symbol encoding and on the Unicode platform are read, fonts with only those names were skipped
 - Fonts without an OS/2 table read SemiCondensed, ExtraLight and spaced names like "Extra Bold" from the subfamily correctly
 - Font files are read completely when the file system returns them in parts
+- `Closest` picks the regular face of a family instead of an extra weight like Light, which matched the family name better
 
 ## [2.0.0] - 2026-08-21
 

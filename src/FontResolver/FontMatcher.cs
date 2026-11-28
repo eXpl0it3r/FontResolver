@@ -42,7 +42,12 @@ internal static class FontMatcher
     {
         var normalizedName = Normalize(name);
 
-        if (Normalize(font.PreferredFamily).Equals(normalizedName, stringComparison))
+        // Name ID 16 is only present when it differs from ID 1, so the regular faces of a family
+        // usually only have ID 1 while its extra weights have ID 16, both have to rank the same
+        var typographicFamily = string.IsNullOrEmpty(font.PreferredFamily)
+            ? font.Family
+            : font.PreferredFamily;
+        if (Normalize(typographicFamily).Equals(normalizedName, stringComparison))
         {
             return 100;
         }
