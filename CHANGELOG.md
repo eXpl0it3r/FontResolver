@@ -19,6 +19,10 @@
 - Font files are read completely when the file system returns them in parts
 - `Closest` picks the regular face of a family instead of an extra weight like Light, which matched the family name better
 - An empty or blank font name resolves to no font instead of an arbitrary one
+- Font directories are scanned for upper case extensions like `.TTF` on Linux and macOS, past subfolders that can't be read and without following linked folders
+- A system without any fonts is scanned once instead of on every call
+- A font file listed by both the platform and the directory scan is parsed once instead of twice
+- [Linux] Font files whose names only differ in case are both found
 
 ## [2.0.0] - 2026-08-21
 

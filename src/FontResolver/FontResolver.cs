@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using FontResolution.FileResolution;
 using FontResolution.Parsing;
 
@@ -8,8 +9,16 @@ public static class FontResolver
     private static readonly object InitializationLock = new();
     private static readonly object CacheLock = new();
 
+    // Linux file systems are case-sensitive, Windows and macOS ones usually aren't
+    private static readonly StringComparer PathComparer = RuntimeInformation.IsOSPlatform(
+        OSPlatform.Linux
+    )
+        ? StringComparer.Ordinal
+        : StringComparer.OrdinalIgnoreCase;
+
     private static FontFileResolver? _fontFileResolver;
-    private static List<FontMetadata> _fontMetadataCache = [];
+    // Null until scanned, an empty list is a valid result on a system without fonts
+    private static List<FontMetadata>? _fontMetadataCache;
 
     public static FontMetadata? Resolve(
         string fontName,
@@ -51,7 +60,7 @@ public static class FontResolver
         // Waits for a scan in progress, which would otherwise store its outdated result after the reset.
         lock (CacheLock)
         {
-            Volatile.Write(ref _fontMetadataCache, []);
+            Volatile.Write(ref _fontMetadataCache, null);
         }
     }
 
@@ -77,7 +86,7 @@ public static class FontResolver
     {
         var cache = Volatile.Read(ref _fontMetadataCache);
 
-        if (cache.Count != 0)
+        if (cache is not null)
         {
             return cache;
         }
@@ -86,14 +95,17 @@ public static class FontResolver
         {
             cache = _fontMetadataCache;
 
-            if (cache.Count != 0)
+            if (cache is not null)
             {
                 return cache;
             }
 
             var fontInfos = _fontFileResolver!.ResolveFiles();
 
+            // The platform lists and the directory scan return the same files, parse each only once
             var newCache = fontInfos
+                .GroupBy(fontInfo => fontInfo.FilePath, PathComparer)
+                .Select(group => group.First())
                 .Select(fontInfo =>
                 {
                     var metadata = FontParser.ExtractFontMetadata(fontInfo.FilePath);
@@ -115,8 +127,6 @@ public static class FontResolver
                         Attributes = new FontAttributes(),
                     };
                 })
-                .GroupBy(metadata => metadata.FilePath, StringComparer.OrdinalIgnoreCase)
-                .Select(group => group.First())
                 .ToList();
 
             Volatile.Write(ref _fontMetadataCache, newCache);

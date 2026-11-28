@@ -137,5 +137,53 @@ public sealed class FontParsingTests
         Assert.AreEqual(regularPath, font.FilePath, "The regular face should match normal attributes best.");
     }
 
+    [TestMethod]
+    public void Resolve_FontFileWithUpperCaseExtension_FontIsResolved()
+    {
+        // Arrange
+        var family = UniqueFamily();
+        var path = new SyntheticFont()
+            .WithName(NameId.Family, family)
+            .WithName(NameId.Subfamily, "Regular")
+            .Write(Path.Combine(_directory, "upper.TTF"));
+
+        // Act
+        FontResolver.RegisterCustomFontDirectory(_directory);
+        var font = FontResolver.Resolve(family, new FontAttributes());
+
+        // Assert
+        Assert.IsNotNull(font, "A font file with an upper case extension should be found.");
+        Assert.AreEqual(path, font.FilePath, "The font file should be found.");
+    }
+
+    [TestMethod]
+    public void Resolve_FileNamesDifferingInCase_BothFontsAreResolved()
+    {
+        // Arrange
+        var lowerFamily = UniqueFamily();
+        var upperFamily = UniqueFamily();
+        new SyntheticFont()
+            .WithName(NameId.Family, lowerFamily)
+            .WithName(NameId.Subfamily, "Regular")
+            .Write(Path.Combine(_directory, "font.ttf"));
+        new SyntheticFont()
+            .WithName(NameId.Family, upperFamily)
+            .WithName(NameId.Subfamily, "Regular")
+            .Write(Path.Combine(_directory, "FONT.ttf"));
+        if (Directory.GetFiles(_directory).Length != 2)
+        {
+            Assert.Inconclusive("The file system isn't case-sensitive.");
+        }
+
+        // Act
+        FontResolver.RegisterCustomFontDirectory(_directory);
+        var lowerFont = FontResolver.Resolve(lowerFamily, new FontAttributes());
+        var upperFont = FontResolver.Resolve(upperFamily, new FontAttributes());
+
+        // Assert
+        Assert.IsNotNull(lowerFont, "The font in font.ttf should be resolved.");
+        Assert.IsNotNull(upperFont, "The font in FONT.ttf should be resolved.");
+    }
+
     private static string UniqueFamily() => "Synthetic " + Guid.NewGuid().ToString("N");
 }
