@@ -112,10 +112,9 @@ internal static class FontParser
         var count = BinaryParser.ReadUint16BigEndian(bytes, nameTablePos + 2);
         var stringDataOffset = BinaryParser.ReadUint16BigEndian(bytes, nameTablePos + 4);
 
-        // Track which values have been set with English entries
-        var hasEnglishValue = new HashSet<int>();
+        // The priority of the record each value was taken from
+        var namePriorities = new Dictionary<int, int>();
 
-        // First pass: Look for English entries
         var nameRecordOffset = nameTablePos + 6;
         for (var i = 0; i < count; i++, nameRecordOffset += 12)
         {
@@ -126,11 +125,12 @@ internal static class FontParser
             var length = BinaryParser.ReadUint16BigEndian(bytes, nameRecordOffset + 8);
             var offset = BinaryParser.ReadUint16BigEndian(bytes, nameRecordOffset + 10);
 
-            // Filter for English language entries:
-            // Platform 3 (Windows): languageID 0x0409 (1033) = US English
-            // Platform 1 (Macintosh): languageID 0 = English
-            var isEnglish =
-                (platformId == 3 && languageId == 0x0409) || (platformId == 1 && languageId == 0);
+            // Windows US English first, it's UTF-16 while Mac names are only read as ASCII, then Mac
+            // English, then any other language
+            var priority =
+                platformId == 3 && languageId == 0x0409 ? 3
+                : platformId == 1 && languageId == 0 ? 2
+                : 1;
 
             if ((platformId != 3 && platformId != 1) || !IsRelevantNameId(nameId))
             {
@@ -153,18 +153,11 @@ internal static class FontParser
                 continue;
             }
 
-            // If English, set the value and mark as having English
-            if (isEnglish)
-            {
-                if (SetMetadataValue(metadata, nameId, decodedString))
-                {
-                    hasEnglishValue.Add(nameId);
-                }
-            }
-            // If not English but we haven't found an English entry yet, use it as fallback
-            else if (!hasEnglishValue.Contains(nameId))
+            // Records are sorted by platform and language, so the preferred one can come last
+            if (!namePriorities.TryGetValue(nameId, out var storedPriority) || priority > storedPriority)
             {
                 SetMetadataValue(metadata, nameId, decodedString);
+                namePriorities[nameId] = priority;
             }
         }
     }
@@ -179,55 +172,31 @@ internal static class FontParser
             || nameId is 17;
     }
 
-    private static bool SetMetadataValue(FontMetadata metadata, ushort nameId, string value)
+    private static void SetMetadataValue(FontMetadata metadata, ushort nameId, string value)
     {
         switch (nameId)
         {
             case 1: // Legacy Family name
-                if (string.IsNullOrEmpty(metadata.Family))
-                {
-                    metadata.Family = value;
-                    return true;
-                }
-                return false;
+                metadata.Family = value;
+                break;
             case 2: // Legacy Subfamily
-                if (string.IsNullOrEmpty(metadata.Subfamily))
-                {
-                    metadata.Subfamily = value;
-                    ParseStyleFromSubfamily(metadata, value);
-                    return true;
-                }
-                return false;
+                metadata.Subfamily = value;
+                ParseStyleFromSubfamily(metadata, value);
+                break;
             case 4: // Full font name
-                if (string.IsNullOrEmpty(metadata.FullName))
-                {
-                    metadata.FullName = value;
-                    return true;
-                }
-                return false;
+                metadata.FullName = value;
+                break;
             case 6: // PostScript name
-                if (string.IsNullOrEmpty(metadata.PostScriptName))
-                {
-                    metadata.PostScriptName = value;
-                    return true;
-                }
-                return false;
+                metadata.PostScriptName = value;
+                break;
             case 16: // Preferred Family (Typographic Family)
-                if (string.IsNullOrEmpty(metadata.PreferredFamily))
-                {
-                    metadata.PreferredFamily = value;
-                    return true;
-                }
-                return false;
+                metadata.PreferredFamily = value;
+                break;
             case 17: // Preferred Subfamily (Typographic Subfamily)
-                if (string.IsNullOrEmpty(metadata.PreferredSubfamily))
-                {
-                    metadata.PreferredSubfamily = value;
-                    return true;
-                }
-                return false;
+                metadata.PreferredSubfamily = value;
+                break;
             default:
-                return false;
+                break;
         }
     }
 
