@@ -313,6 +313,39 @@ public sealed class FontResolverPdfSharpTests
     }
 
     [TestMethod]
+    public void ResolveTypeface_ItalicRequestForAnObliqueFace_ObliqueFaceIsResolved()
+    {
+        // Arrange
+        var directory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        Directory.CreateDirectory(directory);
+        var family = "Synthetic " + Guid.NewGuid().ToString("N");
+        new SyntheticFont()
+            .WithName(NameId.Family, family)
+            .WithName(NameId.Subfamily, "Oblique")
+            .WithOs2(FontWeight.Normal, oblique: true)
+            .Write(Path.Combine(directory, "oblique.ttf"));
+        var fontResolver = new FontResolverPdfSharp();
+
+        try
+        {
+            // Act
+            fontResolver.RegisterCustomFontDirectory(directory);
+            var fontInfo = fontResolver.ResolveTypeface(family, false, true);
+
+            // Assert
+            Assert.StartsWith(
+                family,
+                fontInfo.FaceName,
+                "The oblique face should be used instead of the fallback font."
+            );
+        }
+        finally
+        {
+            Directory.Delete(directory, true);
+        }
+    }
+
+    [TestMethod]
     public void ResolveTypeface_CalledInParallel_EveryResolvedFontHasData()
     {
         // Arrange

@@ -27,6 +27,17 @@ public class FontResolverPdfSharp : IFontResolver
             StringComparison
         );
 
+        // PDFsharp's italic covers oblique faces as well, which Strict wouldn't match otherwise
+        if (font is null && italic)
+        {
+            font = FontResolver.Resolve(
+                familyName,
+                fontAttributes with { Style = FontStyle.Oblique },
+                ResolveStrategy,
+                StringComparison
+            );
+        }
+
         if (font is not null)
         {
             var faceName = CreateFontFace(font);

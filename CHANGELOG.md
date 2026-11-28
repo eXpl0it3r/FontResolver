@@ -27,6 +27,7 @@
 - [Linux] Font discovery can't hang anymore when `fc-list` writes a lot of warnings
 - [Linux] `fc-list` is used on systems without `which` as well
 - `FontResolverPdfSharp` gives oblique faces a name of their own, they could get the bytes of the upright face
+- `FontResolverPdfSharp` with `Strict` uses an oblique face for italic text instead of the fallback font
 
 ## [2.0.0] - 2026-08-21
 
