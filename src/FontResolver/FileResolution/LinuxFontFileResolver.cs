@@ -31,6 +31,10 @@ internal static class LinuxFontFileResolver
                 return fontInfos;
             }
 
+            // Unread stderr fills the pipe and blocks fc-list, e.g. with many fontconfig warnings
+            process.ErrorDataReceived += (_, _) => { };
+            process.BeginErrorReadLine();
+
             var output = process.StandardOutput.ReadToEnd();
             process.WaitForExit();
 
