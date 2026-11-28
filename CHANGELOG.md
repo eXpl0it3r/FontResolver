@@ -23,6 +23,9 @@
 - A system without any fonts is scanned once instead of on every call
 - A font file listed by both the platform and the directory scan is parsed once instead of twice
 - [Linux] Font files whose names only differ in case are both found
+- [Linux] The family names read from `fc-list` no longer end in `:style=...`
+- [Linux] Font discovery can't hang anymore when `fc-list` writes a lot of warnings
+- [Linux] `fc-list` is used on systems without `which` as well
 
 ## [2.0.0] - 2026-08-21
 

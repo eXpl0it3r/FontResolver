@@ -8,11 +8,7 @@ internal static class LinuxFontFileResolver
     {
         var fontInfos = new List<FontFile>();
 
-        if (!IsFontConfigAvailable())
-        {
-            return fontInfos;
-        }
-
+        // Starting fc-list throws if fontconfig isn't installed, minimal images often lack `which`
         try
         {
             var startInfo = new ProcessStartInfo
@@ -30,6 +26,10 @@ internal static class LinuxFontFileResolver
             {
                 return fontInfos;
             }
+
+            // Unread stderr fills the pipe and blocks fc-list, e.g. with many fontconfig warnings
+            process.ErrorDataReceived += (_, _) => { };
+            process.BeginErrorReadLine();
 
             var output = process.StandardOutput.ReadToEnd();
             process.WaitForExit();
@@ -58,35 +58,6 @@ internal static class LinuxFontFileResolver
         return fontInfos;
     }
 
-    private static bool IsFontConfigAvailable()
-    {
-        try
-        {
-            var startInfo = new ProcessStartInfo
-            {
-                FileName = "which",
-                Arguments = "fc-list",
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true,
-            };
-
-            using var process = Process.Start(startInfo);
-            if (process is null)
-            {
-                return false;
-            }
-
-            process.WaitForExit();
-            return process.ExitCode == 0;
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
     private static List<FontFile> ResolveFile(string line)
     {
         var fonts = new List<FontFile>();
@@ -99,7 +70,14 @@ internal static class LinuxFontFileResolver
         }
 
         var fontFilePath = parts[0].Trim();
-        var families = parts[1].Trim().Split(',');
+        var familyPart = parts[1];
+        var styleStart = familyPart.IndexOf(':');
+        if (styleStart >= 0)
+        {
+            familyPart = familyPart.Substring(0, styleStart);
+        }
+
+        var families = familyPart.Trim().Split(',');
 
         if (
             !File.Exists(fontFilePath)
