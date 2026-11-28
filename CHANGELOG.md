@@ -18,6 +18,7 @@
 - Fonts without an OS/2 table read SemiCondensed, ExtraLight and spaced names like "Extra Bold" from the subfamily correctly
 - Font files are read completely when the file system returns them in parts
 - `Closest` picks the regular face of a family instead of an extra weight like Light, which matched the family name better
+- An empty or blank font name resolves to no font instead of an arbitrary one
 
 ## [2.0.0] - 2026-08-21
 

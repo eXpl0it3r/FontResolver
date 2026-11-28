@@ -42,6 +42,12 @@ internal static class FontMatcher
     {
         var normalizedName = Normalize(name);
 
+        // The combined names of a font without subfamilies trim to an empty string as well
+        if (normalizedName.Length == 0)
+        {
+            return 0;
+        }
+
         // Name ID 16 is only present when it differs from ID 1, so the regular faces of a family
         // usually only have ID 1 while its extra weights have ID 16, both have to rank the same
         var typographicFamily = string.IsNullOrEmpty(font.PreferredFamily)
