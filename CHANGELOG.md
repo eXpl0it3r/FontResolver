@@ -20,6 +20,7 @@
 - `Closest` picks the regular face of a family instead of an extra weight like Light, which matched the family name better
 - An empty or blank font name resolves to no font instead of an arbitrary one
 - Font directories are scanned for upper case extensions like `.TTF` on Linux and macOS, past subfolders that can't be read and without following linked folders
+- A system without any fonts is scanned once instead of on every call
 
 ## [2.0.0] - 2026-08-21
 

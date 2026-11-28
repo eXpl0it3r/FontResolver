@@ -9,7 +9,8 @@ public static class FontResolver
     private static readonly object CacheLock = new();
 
     private static FontFileResolver? _fontFileResolver;
-    private static List<FontMetadata> _fontMetadataCache = [];
+    // Null until scanned, an empty list is a valid result on a system without fonts
+    private static List<FontMetadata>? _fontMetadataCache;
 
     public static FontMetadata? Resolve(
         string fontName,
@@ -51,7 +52,7 @@ public static class FontResolver
         // Waits for a scan in progress, which would otherwise store its outdated result after the reset.
         lock (CacheLock)
         {
-            Volatile.Write(ref _fontMetadataCache, []);
+            Volatile.Write(ref _fontMetadataCache, null);
         }
     }
 
@@ -77,7 +78,7 @@ public static class FontResolver
     {
         var cache = Volatile.Read(ref _fontMetadataCache);
 
-        if (cache.Count != 0)
+        if (cache is not null)
         {
             return cache;
         }
@@ -86,7 +87,7 @@ public static class FontResolver
         {
             cache = _fontMetadataCache;
 
-            if (cache.Count != 0)
+            if (cache is not null)
             {
                 return cache;
             }
