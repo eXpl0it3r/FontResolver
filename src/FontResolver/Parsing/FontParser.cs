@@ -18,7 +18,17 @@ internal static class FontParser
 
             try
             {
-                var bytesRead = fs.Read(pooledBytes, 0, (int)fs.Length);
+                // A single read can return less, e.g. on network shares
+                var length = (int)fs.Length;
+                var bytesRead = 0;
+                int read;
+                while (
+                    bytesRead < length
+                    && (read = fs.Read(pooledBytes, bytesRead, length - bytesRead)) > 0
+                )
+                {
+                    bytesRead += read;
+                }
                 var bytes = pooledBytes.AsSpan(0, bytesRead); // Fixed size span view
 
                 var metadata = ParseFontMetadata(bytes);
