@@ -94,7 +94,10 @@ public static class FontResolver
 
             var fontInfos = _fontFileResolver!.ResolveFiles();
 
+            // The platform lists and the directory scan return the same files, parse each only once
             var newCache = fontInfos
+                .GroupBy(fontInfo => fontInfo.FilePath, StringComparer.OrdinalIgnoreCase)
+                .Select(group => group.First())
                 .Select(fontInfo =>
                 {
                     var metadata = FontParser.ExtractFontMetadata(fontInfo.FilePath);
@@ -116,8 +119,6 @@ public static class FontResolver
                         Attributes = new FontAttributes(),
                     };
                 })
-                .GroupBy(metadata => metadata.FilePath, StringComparer.OrdinalIgnoreCase)
-                .Select(group => group.First())
                 .ToList();
 
             Volatile.Write(ref _fontMetadataCache, newCache);
