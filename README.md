@@ -75,17 +75,17 @@ pdfDocument.Save("file.pdf");
 
 ### Resolve Strategy
 
-Sometimes you want a very specific font and sometimes you're okay with a font that closests matches the requested font:
+Sometimes you want a very specific face and sometimes you're okay with the face of the font family that matches the requested attributes closest. Neither strategy falls back to a different font family:
 
 ```csharp
 using FontResolution;
 
 var attributes = new FontAttributes();
 
-// Returns `null` if Arial Narrow isn't installed
+// Returns `null` if Arial Narrow isn't installed with exactly these attributes
 var strictFontMatch = FontResolver.Resolve("Arial Narrow", attributes, FontResolveStrategy.Strict);
 
-// May return Arial or similar if Arial Narrow isn't installed
+// May return e.g. Arial Narrow Bold if there's no regular face, `null` if Arial Narrow isn't installed at all
 var closestFontMatch = FontResolver.Resolve("Arial Narrow", attributes, FontResolveStrategy.Closest);
 
 // Influence the string comparison if you can't trust the input
@@ -102,7 +102,7 @@ var fontResolverPdfSharp = FontResolverPdfSharp.Register();
 // Uses the FallbackFont if the specific font isn't installed
 fontResolverPdfSharp.ResolveStrategy = FontResolveStrategy.Strict;
 
-// May return a similar font famil if the specific font isn't installed
+// Uses the closest face of the font family, and the FallbackFont if the family isn't installed
 fontResolverPdfSharp.ResolveStrategy = FontResolveStrategy.Closest;
 
 // Influence the string comparison if you can't trust the input

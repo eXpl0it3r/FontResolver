@@ -110,5 +110,32 @@ public sealed class FontParsingTests
         Assert.IsNotNull(font, $"The {subfamily} face should be resolved with weight {weight} and width {width}.");
     }
 
+    [TestMethod]
+    public void Resolve_ClosestWithExtraWeightsInTheFamily_RegularFaceIsResolved()
+    {
+        // Arrange
+        var family = UniqueFamily();
+        var regularPath = new SyntheticFont()
+            .WithName(NameId.Family, family)
+            .WithName(NameId.Subfamily, "Regular")
+            .WithOs2(FontWeight.Normal)
+            .Write(Path.Combine(_directory, "regular.ttf"));
+        new SyntheticFont()
+            .WithName(NameId.Family, family + " Light")
+            .WithName(NameId.Subfamily, "Regular")
+            .WithName(NameId.TypographicFamily, family)
+            .WithName(NameId.TypographicSubfamily, "Light")
+            .WithOs2(FontWeight.Light)
+            .Write(Path.Combine(_directory, "light.ttf"));
+
+        // Act
+        FontResolver.RegisterCustomFontDirectory(_directory);
+        var font = FontResolver.Resolve(family, new FontAttributes(), FontResolveStrategy.Closest);
+
+        // Assert
+        Assert.IsNotNull(font, "The font should be resolved.");
+        Assert.AreEqual(regularPath, font.FilePath, "The regular face should match normal attributes best.");
+    }
+
     private static string UniqueFamily() => "Synthetic " + Guid.NewGuid().ToString("N");
 }

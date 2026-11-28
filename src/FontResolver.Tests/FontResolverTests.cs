@@ -42,6 +42,23 @@ public sealed class FontResolverTests
     }
 
     [TestMethod]
+    [DataRow("")]
+    [DataRow("  ")]
+    public void Resolve_EmptyFontName_NullIsReturned(string fontName)
+    {
+        // Arrange
+        var style = new FontAttributes();
+
+        // Act
+        var strictFont = FontResolver.Resolve(fontName, style);
+        var closestFont = FontResolver.Resolve(fontName, style, FontResolveStrategy.Closest);
+
+        // Assert
+        Assert.IsNull(strictFont, "No font should be resolved for an empty name.");
+        Assert.IsNull(closestFont, "No font should be resolved for an empty name, also with Closest.");
+    }
+
+    [TestMethod]
     public void RegisterCustomFontDirectory_DirectoryAdded_FontIsResolvedFromCustomDirectory()
     {
         // Arrange
